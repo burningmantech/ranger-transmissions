@@ -3,7 +3,6 @@ from datetime import datetime as DateTime
 from datetime import timedelta as TimeDelta
 from datetime import timezone as TimeZone
 from enum import Enum
-from hashlib import sha256
 from os import walk
 from pathlib import Path
 from re import Pattern
@@ -133,12 +132,12 @@ class Indexer:
 
     log: ClassVar[Logger] = Logger()
 
-    @classmethod
-    def whisper(cls) -> Whisper:
+    @staticmethod
+    def whisper() -> Whisper:
         """
         Build a Whisper model.
         """
-        cls.log.info("Loading Whisper model...")
+        Indexer.log.info("Loading Whisper model...")
         return loadWhisper("medium.en")
 
     eventID: str
@@ -202,18 +201,18 @@ class Indexer:
         except IndexError:
             channel = match.group("channel2")
 
-        # Duration
+        # # Duration
 
-        duration = TimeDelta(0)  # FIXME
+        # duration = TimeDelta(0)  # FIXME
 
-        # Checksum
+        # # Checksum
 
-        checksum = sha256()
-        with path.open("rb") as f:
-            checksum.update(f.read())
+        # checksum = sha256()
+        # with path.open("rb") as f:
+        #     checksum.update(f.read())
 
-        # Speech -> text
-        text = self._whisper.transcribe(str(path))
+        # # Speech -> text
+        # text = self._whisper.transcribe(str(path))
 
         # Packaged up
 
@@ -223,10 +222,10 @@ class Indexer:
             system=system,
             channel=channel,
             startTime=startTime,
-            duration=duration,
+            duration=None,
             path=path,
-            sha256=checksum.hexdigest(),
-            text=text,
+            sha256=None,  # checksum.hexdigest(),
+            text=None,  # text
         )
 
     def transmissions(self) -> Iterable[Transmission | None]:
