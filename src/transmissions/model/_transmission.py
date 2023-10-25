@@ -36,18 +36,25 @@ class Transmission:
     Radio transmission
     """
 
+    eventID: str
     station: str
     system: str
     channel: str
     startTime: DateTime
-    duration: TimeDelta
+    duration: TimeDelta | None
     path: Path
+    sha256: str | None
     text: str | None
+
+    @property
+    def endTime(self) -> DateTime | None:
+        if self.duration is None:
+            return None
+        return self.startTime + self.duration
 
     def __str__(self) -> str:
         return (
-            f"{self.startTime}"
+            f"{self.startTime} ({self.duration})"
             f" [{self.system}: {self.channel}]"
             f" {self.station}"
-            f" ({self.duration})"
         )

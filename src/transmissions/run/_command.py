@@ -9,6 +9,10 @@ from click import version_option as versionOption
 
 from transmissions.ext.click import defaultConfigPath, readConfig
 from transmissions.ext.logger import startLogging
+from transmissions.indexer import Indexer
+
+
+defaultConfigPathText = str(defaultConfigPath)
 
 
 @frozen(kw_only=True)
@@ -36,7 +40,7 @@ class Command:
     required=False,
 )
 @passContext
-def main(ctx: ClickContext, config: str = defaultConfigPath) -> None:
+def main(ctx: ClickContext, config: str = defaultConfigPathText) -> None:
     """
     Radio transmission indexing tool.
     """
@@ -53,3 +57,15 @@ def index() -> None:
     """
     Index audio files.
     """
+    indexer = Indexer(
+        eventID="2023",
+        root=(
+            Path("~").expanduser()
+            / "Google Drive"
+            / "Shared drives"
+            / "2023 Radio System Archive"
+        ),
+    )
+
+    for transmission in indexer.transmissions():
+        print("Transmission:", transmission)

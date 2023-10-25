@@ -23,7 +23,7 @@ extend-ignore =
     #D202,
 
     # 1 blank line required between summary line and description
-    #D205,
+    D205,
 
     # First line should end with a period
     D400,
@@ -59,7 +59,7 @@ extend-ignore =
     N816,
 
     # line break before binary operator
-    #W503,
+    W503,
 
     # End of list (allows last item to end with trailing ',')
     EOL
