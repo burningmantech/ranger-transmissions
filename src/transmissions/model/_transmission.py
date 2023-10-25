@@ -56,5 +56,5 @@ class Transmission:
         return (
             f"{self.startTime} ({self.duration})"
             f" [{self.system}: {self.channel}]"
-            f" {self.station}"
+            f" {self.station}: {self.text}"
         )

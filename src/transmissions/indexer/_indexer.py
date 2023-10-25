@@ -4,13 +4,16 @@ from datetime import timedelta as TimeDelta
 from datetime import timezone as TimeZone
 from enum import Enum
 from hashlib import sha256
+from os import walk
 from pathlib import Path
 from re import Pattern
 from re import compile as regex
 from typing import ClassVar
 
-from attrs import frozen
+from attrs import Factory, frozen
 from twisted.logger import Logger
+from whisper import Whisper
+from whisper import load_model as loadWhisper
 
 from transmissions.model import Transmission
 
@@ -130,8 +133,18 @@ class Indexer:
 
     log: ClassVar[Logger] = Logger()
 
+    @classmethod
+    def whisper(cls) -> Whisper:
+        """
+        Build a Whisper model.
+        """
+        cls.log.info("Loading Whisper model...")
+        return loadWhisper("medium.en")
+
     eventID: str
     root: Path
+
+    _whisper: Whisper = Factory(whisper)
 
     def _transmissionFromFile(self, path: Path) -> Transmission:
         """
@@ -197,11 +210,10 @@ class Indexer:
 
         checksum = sha256()
         with path.open("rb") as f:
-            while True:
-                data = f.read(1024 * 1024 * 8)
-                if len(data) == 0:
-                    break
-                checksum.update(f.read())
+            checksum.update(f.read())
+
+        # Speech -> text
+        text = self._whisper.transcribe(str(path))
 
         # Packaged up
 
@@ -214,7 +226,7 @@ class Indexer:
             duration=duration,
             path=path,
             sha256=checksum.hexdigest(),
-            text=None,
+            text=text,
         )
 
     def transmissions(self) -> Iterable[Transmission | None]:
@@ -226,7 +238,7 @@ class Indexer:
             dirpath,
             dirnames,
             filenames,
-        ) in self.root.walk():  # type: ignore[attr-defined]
+        ) in walk(self.root):
             self.log.info(
                 "Scanning directory: {dirpath}",
                 dirpath=dirpath,
@@ -235,6 +247,6 @@ class Indexer:
             )
             for filename in filenames:
                 try:
-                    yield self._transmissionFromFile(dirpath / filename)
+                    yield self._transmissionFromFile(Path(dirpath) / filename)
                 except InvalidFileError as e:
                     self.log.error("{error}", error=e)
