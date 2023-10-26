@@ -3,6 +3,7 @@ from datetime import datetime as DateTime
 from datetime import timedelta as TimeDelta
 from datetime import timezone as TimeZone
 from enum import Enum
+from hashlib import sha256
 from os import walk
 from pathlib import Path
 from re import Pattern
@@ -10,6 +11,7 @@ from re import compile as regex
 from typing import ClassVar
 
 from attrs import Factory, frozen
+from pydub import AudioSegment
 from twisted.logger import Logger
 from whisper import Whisper
 from whisper import load_model as loadWhisper
@@ -145,7 +147,9 @@ class Indexer:
 
     _whisper: Whisper = Factory(whisper)
 
-    def _transmissionFromFile(self, path: Path) -> Transmission:
+    def _transmissionFromFile(
+        self, path: Path, _expensiveParts: bool = False
+    ) -> Transmission:
         """
         Returns a Transmission based on the given Path to a file.
         """
@@ -194,27 +198,35 @@ class Indexer:
         else:
             station = f"{stationType} {stationName}"
 
-        # # Channel
+        # Channel
 
         try:
             channel = match.group("channel1")
         except IndexError:
             channel = match.group("channel2")
 
-        # # Duration
+        if _expensiveParts:
+            # Duration
 
-        # duration = TimeDelta(0)  # FIXME
+            audio = AudioSegment.from_wav(str(path))
+            duration = TimeDelta(milliseconds=len(audio))
 
-        # # Checksum
+            # Checksum
 
-        # checksum = sha256()
-        # with path.open("rb") as f:
-        #     checksum.update(f.read())
+            hasher = sha256()
+            with path.open("rb") as f:
+                hasher.update(f.read())
+            sha256Digest = hasher.hexdigest()
 
-        # # Speech -> text
-        # text = self._whisper.transcribe(str(path))
+            # Speech -> text
+            text = self._whisper.transcribe(str(path))
 
-        # Packaged up
+        else:
+            duration = None
+            sha256Digest = None
+            text = None
+
+        # Return result
 
         return Transmission(
             eventID=self.eventID,
@@ -222,10 +234,10 @@ class Indexer:
             system=system,
             channel=channel,
             startTime=startTime,
-            duration=None,
+            duration=duration,
             path=path,
-            sha256=None,  # checksum.hexdigest(),
-            text=None,  # text
+            sha256=sha256Digest,
+            text=text,
         )
 
     def transmissions(self) -> Iterable[Transmission | None]:
