@@ -1,3 +1,5 @@
+# -*- test-case-name: ranger-ims-server.model.test -*-
+
 ##
 # See the file COPYRIGHT for copyright information.
 #
@@ -15,14 +17,7 @@
 ##
 
 """
-Radio transmission data model
+Tests for transmissions.model
 """
 
-from ._event import Event
-from ._transmission import Transmission
-
-
-__all__ = (
-    "Event",
-    "Transmission",
-)
+__all__ = ()

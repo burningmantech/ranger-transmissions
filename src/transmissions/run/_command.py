@@ -12,6 +12,9 @@ from transmissions.ext.logger import startLogging
 from transmissions.indexer import Indexer
 
 
+__all__ = ()
+
+
 defaultConfigPathText = str(defaultConfigPath)
 
 

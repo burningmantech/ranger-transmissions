@@ -19,6 +19,9 @@ from whisper import load_model as loadWhisper
 from transmissions.model import Transmission
 
 
+__all__ = ()
+
+
 class TZInfo(Enum):
     """
     Time zones

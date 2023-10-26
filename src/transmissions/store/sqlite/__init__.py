@@ -15,14 +15,10 @@
 ##
 
 """
-Radio transmission data model
+Transmissions SQLite data store.
 """
 
-from ._event import Event
-from ._transmission import Transmission
+from ._store import DataStore
 
 
-__all__ = (
-    "Event",
-    "Transmission",
-)
+__all__ = ("DataStore",)

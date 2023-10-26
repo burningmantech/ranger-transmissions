@@ -15,14 +15,19 @@
 ##
 
 """
-Radio transmission data model
+Transmissions data store exceptions.
 """
 
-from ._event import Event
-from ._transmission import Transmission
+from attrs import mutable
 
 
-__all__ = (
-    "Event",
-    "Transmission",
-)
+__all__ = ()
+
+
+@mutable
+class StorageError(RuntimeError):
+    """
+    Storage error.
+    """
+
+    message: str

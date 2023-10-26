@@ -15,14 +15,27 @@
 ##
 
 """
-Radio transmission data model
+Tests for transmissions.model._event
 """
 
-from ._event import Event
-from ._transmission import Transmission
+from hypothesis import given
+from twisted.trial.unittest import SynchronousTestCase as TestCase
+
+from .._event import Event
+from ..strategies import events
 
 
-__all__ = (
-    "Event",
-    "Transmission",
-)
+__all__ = ()
+
+
+class EventTests(TestCase):
+    """
+    Tests for :class:`Event`
+    """
+
+    @given(events())
+    def test_str(self, event: Event) -> None:
+        """
+        :meth:`Event.__str__` renders the event as a string.
+        """
+        self.assertEqual(str(event), f"{event.id}: {event.name}")

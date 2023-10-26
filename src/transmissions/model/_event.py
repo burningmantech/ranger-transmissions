@@ -1,3 +1,5 @@
+# -*- test-case-name: ranger-ims-server.model.test.test_event -*-
+
 ##
 # See the file COPYRIGHT for copyright information.
 #
@@ -15,14 +17,25 @@
 ##
 
 """
-Radio transmission data model
+Event
 """
 
-from ._event import Event
-from ._transmission import Transmission
+from attrs import frozen
 
 
-__all__ = (
-    "Event",
-    "Transmission",
-)
+__all__ = ()
+
+
+@frozen(kw_only=True, order=True)
+class Event:
+    """
+    Event
+
+    An event identifies a container for incident data.
+    """
+
+    id: str
+    name: str
+
+    def __str__(self) -> str:
+        return f"{self.id}: {self.name}"

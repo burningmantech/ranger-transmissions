@@ -15,14 +15,14 @@
 ##
 
 """
-Radio transmission data model
+Transmissions data store.
 """
 
-from ._event import Event
-from ._transmission import Transmission
+from ._abc import TXDataStore
+from ._exceptions import StorageError
 
 
 __all__ = (
-    "Event",
-    "Transmission",
+    "TXDataStore",
+    "StorageError",
 )

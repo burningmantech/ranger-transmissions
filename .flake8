@@ -16,6 +16,13 @@ extend-exclude =
 
 # Codes: https://flake8.pycqa.org/en/latest/user/error-codes.html
 extend-ignore =
+    # Do not perform calls in argument defaults
+    # (Necessary for cast())
+    B008,
+
+    # Missing docstring in magic method
+    D105,
+
     # One-line docstring should fit on one line with quotes
     D200,
 
