@@ -1,15 +1,25 @@
+from collections.abc import Iterable
 from pathlib import Path
 from typing import cast
 
 import click
 from attrs import frozen
-from click import Context, Group, group, option, pass_context, version_option
+from click import (
+    Context,
+    Group,
+    UsageError,
+    group,
+    option,
+    pass_context,
+    version_option,
+)
 from twisted.internet.interfaces import IReactorCore
 from twisted.internet.task import react
 
 from transmissions.ext.click import readConfig
 from transmissions.ext.logger import startLogging
 from transmissions.indexer import Indexer
+from transmissions.model import Event
 
 from ._store import StoreFactory, storeFactoryFromConfig
 
@@ -97,23 +107,51 @@ def storeFactoryFromContext(ctx: Context) -> StoreFactory:
     return cast(StoreFactory, ctx.default_map["_config"]["storeFactory"])
 
 
+def eventsFromContext(ctx: Context) -> Iterable[tuple[Event, Path]]:
+    """
+    Get events from the given context.
+    """
+    assert ctx.default_map is not None
+
+    eventConfig = ctx.default_map["_config"].get("Audio", {}).get("Event", {})
+
+    for eventID, eventDict in eventConfig.items():
+        try:
+            eventName = eventDict["Name"]
+        except KeyError as e:
+            raise UsageError(f"No name specified for event {eventID}") from e
+
+        event = Event(id=eventID, name=eventName)
+
+        try:
+            sourcePath = Path(eventDict["SourceDirectory"]).expanduser()
+        except KeyError as e:
+            raise UsageError(
+                f"No source directory specified for event {eventID}"
+            ) from e
+
+        if not sourcePath.is_dir():
+            raise UsageError(
+                f"No source directory found for event {eventID}: {sourcePath}"
+            )
+
+        yield (event, sourcePath)
+
+
 @main.command()
-def index() -> None:
+@pass_context
+def index(ctx: Context) -> None:
     """
     Index audio files.
     """
-    indexer = Indexer(
-        eventID="2023",
-        root=(
-            Path("~").expanduser()
-            / "Google Drive"
-            / "Shared drives"
-            / "2023 Radio System Archive"
-        ),
-    )
+    for event, sourcePath in eventsFromContext(ctx):
+        indexer = Indexer(
+            eventID=event.id,
+            root=sourcePath,
+        )
 
-    for transmission in indexer.transmissions():
-        click.echo(f"Transmission: {transmission}")
+        for transmission in indexer.transmissions():
+            click.echo(f"Transmission: {transmission}")
 
 
 @main.command()
