@@ -7,26 +7,23 @@ from collections.abc import Callable, Mapping, Sequence
 from enum import Enum, auto
 from io import StringIO
 from pathlib import Path
+from tomllib import TOMLDecodeError
 from tomllib import load as tomlLoadFile
 from typing import Any, ClassVar, cast
 from unittest.mock import patch
 
 import click
 from attrs import Factory, mutable
-from click import option
+from click import UsageError, option
 
 
 __all__ = (
     "ClickTestResult",
     "clickTestRun",
     "composedOptions",
-    "defaultConfigPath",
     "readConfig",
     "trialRunOption",
 )
-
-
-defaultConfigPath = Path("~/.rtx.ini")
 
 
 def composedOptions(
@@ -121,15 +118,16 @@ def clickTestRun(
     return result
 
 
-def readConfig(
-    path: Path = defaultConfigPath,
-) -> dict[str, str | None]:
+def readConfig(path: Path) -> dict[str, str | None]:
     """
     Read configuration from the given path.
     """
     path = path.expanduser()
 
     try:
-        return tomlLoadFile(path.open("rb"))
+        try:
+            return tomlLoadFile(path.open("rb"))
+        except TOMLDecodeError as e:
+            raise UsageError(f"Invalid configuration file: {e}") from e
     except FileNotFoundError:
         return {}

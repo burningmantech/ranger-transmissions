@@ -3,6 +3,7 @@ include .flake8
 include .isort.cfg
 include .pre-commit-config.yaml
 include codecov.yml
+include conf/rtx-sample.toml
 include COPYRIGHT.txt
 include LICENSE.txt
 include mypy.ini

@@ -1,7 +1,7 @@
 /.hypothesis
 /.tox
 /build/
-/cached/
+/conf/rtx.toml
 /data/
 /dist/
 /htmlcov/

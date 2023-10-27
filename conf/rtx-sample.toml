@@ -1,0 +1,8 @@
+[Store]
+
+Type = "SQLite"
+
+
+[Store.SQLite]
+
+File = "./data/rtx.sqlite"

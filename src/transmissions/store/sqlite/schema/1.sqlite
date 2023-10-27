@@ -1,0 +1,13 @@
+create table SCHEMA_INFO (
+    VERSION integer not null
+);
+
+insert into SCHEMA_INFO (VERSION) values (1);
+
+
+create table EVENT (
+    ID   text not null,
+    NAME text not null,
+
+    primary key (ID)
+);
