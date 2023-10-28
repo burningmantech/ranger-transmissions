@@ -44,7 +44,7 @@ class Transmission:
     duration: TimeDelta | None
     path: Path
     sha256: str | None
-    text: str | None
+    transcription: str | None
 
     @property
     def endTime(self) -> DateTime | None:
@@ -56,5 +56,5 @@ class Transmission:
         return (
             f"{self.startTime} ({self.duration})"
             f" [{self.system}: {self.channel}]"
-            f" {self.station}: {self.text}"
+            f" {self.station}: {self.transcription}"
         )

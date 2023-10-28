@@ -222,12 +222,12 @@ class Indexer:
             sha256Digest = hasher.hexdigest()
 
             # Speech -> text
-            text = self._whisper.transcribe(str(path))
+            transcription = self._whisper.transcribe(str(path))
 
         else:
             duration = None
             sha256Digest = None
-            text = None
+            transcription = None
 
         # Return result
 
@@ -240,7 +240,7 @@ class Indexer:
             duration=duration,
             path=path,
             sha256=sha256Digest,
-            text=text,
+            transcription=transcription,
         )
 
     def transmissions(self) -> Iterable[Transmission | None]:
