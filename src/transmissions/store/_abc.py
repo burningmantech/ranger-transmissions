@@ -49,6 +49,12 @@ class TXDataStore(ABC):
         there are any problems detected.
         """
 
+    @abstractmethod
+    async def close(self) -> None:
+        """
+        Close any existing connections, close files, etc.
+        """
+
     ###
     # Events
     ###

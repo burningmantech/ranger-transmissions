@@ -150,6 +150,9 @@ class DatabaseStore(TXDataStore):
         Close any existing connections to the database.
         """
 
+    async def close(self) -> None:
+        await self.disconnect()
+
     @abstractmethod
     async def runQuery(
         self, query: Query, parameters: Parameters | None = None
@@ -177,6 +180,12 @@ class DatabaseStore(TXDataStore):
         """
         Create a transaction and call the given interaction with the
         transaction as the sole argument.
+        """
+
+    @abstractmethod
+    async def commit(self) -> None:
+        """
+        Commit.
         """
 
     @abstractmethod
@@ -224,6 +233,7 @@ class DatabaseStore(TXDataStore):
         await self.runOperation(
             self.query.createEvent, dict(eventID=event.id, eventName=event.name)
         )
+        await self.commit()
 
         self.log.info(
             "Created event: {event}",

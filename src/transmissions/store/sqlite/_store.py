@@ -126,8 +126,12 @@ class DataStore(DatabaseStore):
         if self._state.db is None:
             try:
                 if self.dbPath is None:
+                    self.log.info("Creating in-memory SQLite database")
                     self._state.db = createDB(None, schema="")
                 else:
+                    self.log.info(
+                        "Opening SQLite database: {path}", path=self.dbPath
+                    )
                     self._state.db = openDB(self.dbPath, schema="")
 
             except SQLiteError as e:
@@ -147,6 +151,7 @@ class DataStore(DatabaseStore):
         See :meth:`DatabaseStore.disconnect`.
         """
         if self._state.db is not None:
+            self.log.info("Closing SQLite database: {path}", path=self.dbPath)
             self._state.db.close()
             self._state.db = None
 
@@ -191,6 +196,12 @@ class DataStore(DatabaseStore):
                 error=e,
             )
             raise StorageError(str(e)) from e
+
+    async def commit(self) -> None:
+        """
+        Commit.
+        """
+        self._db.commit()
 
     async def dbSchemaVersion(self) -> int:
         """
