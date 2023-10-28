@@ -273,6 +273,11 @@ class Indexer:
         Scans files contained within the root directory and adds them to the
         data store.
         """
+        events = set(await store.events())
+
+        if self.event not in events:
+            await store.createEvent(self.event)
+
         for transmission in self.transmissions():
             self.log.info(
                 "Indexing transmission: {transmission}",
