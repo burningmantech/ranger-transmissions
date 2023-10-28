@@ -149,9 +149,12 @@ def index(ctx: Context) -> None:
 
     async def run(reactor: IReactorCore) -> None:
         store = await storeFactory()
-        for event, sourcePath in configuredEvents:
-            indexer = Indexer(event=event, root=sourcePath)
-            await indexer.indexIntoStore(store)
+        try:
+            for event, sourcePath in configuredEvents:
+                indexer = Indexer(event=event, root=sourcePath)
+                await indexer.indexIntoStore(store)
+        finally:
+            await store.close()
 
     react(run)
 
@@ -166,7 +169,10 @@ def events(ctx: Context) -> None:
 
     async def run(reactor: IReactorCore) -> None:
         store = await storeFactory()
-        for event in await store.events():
-            click.echo(str(event))
+        try:
+            for event in await store.events():
+                click.echo(str(event))
+        finally:
+            await store.close()
 
     react(run)
