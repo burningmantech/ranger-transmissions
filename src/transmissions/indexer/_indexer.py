@@ -10,7 +10,7 @@ from re import Pattern
 from re import compile as regex
 from typing import ClassVar
 
-from attrs import Factory, frozen
+from attrs import frozen
 from pydub import AudioSegment
 from twisted.logger import Logger
 from whisper import Whisper
@@ -138,18 +138,20 @@ class Indexer:
 
     log: ClassVar[Logger] = Logger()
 
-    @staticmethod
-    def whisper() -> Whisper:
+    _whisper: ClassVar[Whisper] = None
+
+    @classmethod
+    def whisper(cls) -> Whisper:
         """
         Build a Whisper model.
         """
-        Indexer.log.info("Loading Whisper model...")
-        return loadWhisper("medium.en")
+        if cls._whisper is None:
+            Indexer.log.info("Loading Whisper model...")
+            cls._whisper = loadWhisper("medium.en")
+        return cls._whisper
 
     event: Event
     root: Path
-
-    _whisper: Whisper = Factory(whisper)
 
     def _transmissionFromFile(
         self, path: Path, _expensiveParts: bool = False
@@ -223,7 +225,7 @@ class Indexer:
             sha256Digest = hasher.hexdigest()
 
             # Speech -> text
-            transcription = self._whisper.transcribe(str(path))
+            transcription = self.whisper().transcribe(str(path))
 
         else:
             duration = None
