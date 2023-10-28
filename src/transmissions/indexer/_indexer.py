@@ -16,7 +16,8 @@ from twisted.logger import Logger
 from whisper import Whisper
 from whisper import load_model as loadWhisper
 
-from transmissions.model import Transmission
+from transmissions.model import Event, Transmission
+from transmissions.store import TXDataStore
 
 
 __all__ = ()
@@ -145,7 +146,7 @@ class Indexer:
         Indexer.log.info("Loading Whisper model...")
         return loadWhisper("medium.en")
 
-    eventID: str
+    event: Event
     root: Path
 
     _whisper: Whisper = Factory(whisper)
@@ -232,7 +233,7 @@ class Indexer:
         # Return result
 
         return Transmission(
-            eventID=self.eventID,
+            eventID=self.event.id,
             station=station,
             system=system,
             channel=channel,
@@ -243,10 +244,10 @@ class Indexer:
             transcription=transcription,
         )
 
-    def transmissions(self) -> Iterable[Transmission | None]:
+    def transmissions(self) -> Iterable[Transmission]:
         """
         Returns an Iterable of Transmissions based on files contained within
-        the given Path to a directory.
+        the root directory.
         """
         for (
             dirpath,
@@ -264,3 +265,14 @@ class Indexer:
                     yield self._transmissionFromFile(Path(dirpath) / filename)
                 except InvalidFileError as e:
                     self.log.error("{error}", error=e)
+
+    async def indexIntoStore(self, store: TXDataStore) -> None:
+        """
+        Scans files contained within the root directory and adds them to the
+        data store.
+        """
+        for transmission in self.transmissions():
+            self.log.info(
+                "Indexing transmission: {transmission}",
+                transmission=transmission,
+            )

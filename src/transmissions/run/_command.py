@@ -107,7 +107,7 @@ def storeFactoryFromContext(ctx: Context) -> StoreFactory:
     return cast(StoreFactory, ctx.default_map["_config"]["storeFactory"])
 
 
-def eventsFromContext(ctx: Context) -> Iterable[tuple[Event, Path]]:
+def configuredEventsFromContext(ctx: Context) -> Iterable[tuple[Event, Path]]:
     """
     Get events from the given context.
     """
@@ -144,14 +144,16 @@ def index(ctx: Context) -> None:
     """
     Index audio files.
     """
-    for event, sourcePath in eventsFromContext(ctx):
-        indexer = Indexer(
-            eventID=event.id,
-            root=sourcePath,
-        )
+    storeFactory = storeFactoryFromContext(ctx)
+    configuredEvents = configuredEventsFromContext(ctx)
 
-        for transmission in indexer.transmissions():
-            click.echo(f"Transmission: {transmission}")
+    async def run(reactor: IReactorCore) -> None:
+        store = await storeFactory()
+        for event, sourcePath in configuredEvents:
+            indexer = Indexer(event=event, root=sourcePath)
+            await indexer.indexIntoStore(store)
+
+    react(run)
 
 
 @main.command()

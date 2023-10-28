@@ -11,3 +11,18 @@ create table EVENT (
 
     primary key (ID)
 );
+
+
+create table TRANSMISSION (
+    EVENT         text not null,
+    STATION       text not null,
+    SYSTEM        text not null,
+    CHANNEL       text not null,
+    START_TIME    integer not null,
+    DURATION      integer not null,
+    FILE_NAME     text not null,
+    SHA256        text not null,
+    TRANSCRIPTION text not null,
+
+    foreign key (EVENT) references EVENT(ID),
+);
