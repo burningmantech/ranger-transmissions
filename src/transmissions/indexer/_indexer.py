@@ -154,7 +154,7 @@ class Indexer:
     root: Path
 
     def _transmissionFromFile(
-        self, path: Path, _expensiveParts: bool = False
+        self, path: Path, _expensiveParts: bool = True
     ) -> Transmission:
         """
         Returns a Transmission based on the given Path to a file.
@@ -225,7 +225,7 @@ class Indexer:
             sha256Digest = hasher.hexdigest()
 
             # Speech -> text
-            transcription = self.whisper().transcribe(str(path))
+            transcription = self.whisper().transcribe(str(path))["text"]
 
         else:
             duration = None

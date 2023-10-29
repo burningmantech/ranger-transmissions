@@ -163,10 +163,11 @@ class DataStore(DatabaseStore):
 
         except SQLiteError as e:
             self.log.critical(
-                "Unable to {description}: {error}",
+                "Unable to {description} using query {query} and "
+                "parameters {parameters}: {error}",
                 description=query.description,
                 query=query,
-                **parameters,
+                parameters=parameters,
                 error=e,
             )
             raise StorageError(str(e)) from e
