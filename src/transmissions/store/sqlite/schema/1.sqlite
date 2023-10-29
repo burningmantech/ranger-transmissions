@@ -18,11 +18,11 @@ create table TRANSMISSION (
     STATION       text not null,
     SYSTEM        text not null,
     CHANNEL       text not null,
-    START_TIME    integer not null,
-    DURATION      integer not null,
+    START_TIME    real not null,
+    DURATION      real,
     FILE_NAME     text not null,
-    SHA256        text not null,
-    TRANSCRIPTION text not null,
+    SHA256        text,
+    TRANSCRIPTION text,
 
     foreign key (EVENT) references EVENT(ID)
 );

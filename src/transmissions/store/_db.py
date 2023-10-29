@@ -21,6 +21,7 @@ Transmissions database tooling.
 from abc import abstractmethod
 from collections.abc import Callable, Iterable, Iterator, Mapping
 from datetime import datetime as DateTime
+from datetime import timedelta as TimeDelta
 from datetime import timezone as TimeZone
 from pathlib import Path
 from textwrap import dedent
@@ -29,7 +30,7 @@ from typing import Any, ClassVar, Optional, TypeVar, Union, cast
 from attrs import field, frozen
 from twisted.logger import Logger
 
-from transmissions.model import Event
+from transmissions.model import Event, Transmission
 
 from ._abc import TXDataStore
 from ._exceptions import StorageError
@@ -60,6 +61,7 @@ class Queries:
     events: Query
     createEvent: Query
     createEventOrIgnore: Query
+    createTransmission: Query
 
 
 @frozen(kw_only=True)
@@ -127,6 +129,25 @@ class DatabaseStore(TXDataStore):
             raise TypeError("Time stamp in SQLite store must be a float")
 
         return DateTime.fromtimestamp(value, tz=TimeZone.utc)
+
+    @staticmethod
+    def asDurationValue(duration: TimeDelta) -> ParameterValue:
+        """
+        Convert a :class:`Duration` to a duration value for the database.
+        This implementation returns a :class:`float`.
+        """
+        return duration.total_seconds()
+
+    @staticmethod
+    def fromDurationValue(value: ParameterValue) -> TimeDelta:
+        """
+        Convert a duration value from the database to a :class:`TimeDelta`.
+        This implementation requires :obj:`value` to be a :class:`float`.
+        """
+        if not isinstance(value, float):
+            raise TypeError("Duration in SQLite store must be a float")
+
+        return TimeDelta(seconds=value)
 
     @classmethod
     def loadSchema(cls, version: int | str | None = None) -> str:
@@ -201,16 +222,10 @@ class DatabaseStore(TXDataStore):
         """
 
     async def upgradeSchema(self, targetVersion: int | None = None) -> None:
-        """
-        See :meth:`TXDataStore.upgradeSchema`.
-        """
         if await self.dbManager.upgradeSchema(targetVersion):
             await self.disconnect()
 
     async def validate(self) -> None:
-        """
-        See :meth:`TXDataStore.validate`.
-        """
         self.log.info("Validating data store...")
 
     ###
@@ -218,18 +233,12 @@ class DatabaseStore(TXDataStore):
     ###
 
     async def events(self) -> Iterable[Event]:
-        """
-        See :meth:`TXDataStore.events`.
-        """
         return (
             Event(id=cast(str, row["ID"]), name=cast(str, row["NAME"]))
             for row in await self.runQuery(self.query.events)
         )
 
     async def createEvent(self, event: Event) -> None:
-        """
-        See :meth:`TXDataStore.createEvent`.
-        """
         await self.runOperation(
             self.query.createEvent, dict(eventID=event.id, eventName=event.name)
         )
@@ -239,6 +248,41 @@ class DatabaseStore(TXDataStore):
             "Created event: {event}",
             storeWriteClass=Event,
             event=event,
+        )
+
+    ###
+    # Transmissions
+    ###
+
+    async def transmissions(self) -> Iterable[Event]:
+        pass
+
+    async def createTransmission(self, transmission: Transmission) -> None:
+        if transmission.duration is None:
+            duration = None
+        else:
+            duration = self.asDurationValue(transmission.duration)
+
+        await self.runOperation(
+            self.query.createTransmission,
+            dict(
+                eventID=transmission.eventID,
+                station=transmission.station,
+                system=transmission.system,
+                channel=transmission.channel,
+                startTime=self.asDateTimeValue(transmission.startTime),
+                duration=duration,
+                path=str(transmission.path),
+                sha256=transmission.sha256,
+                transcription=transmission.transcription,
+            ),
+        )
+        await self.commit()
+
+        self.log.info(
+            "Created transmission: {transmission}",
+            storeWriteClass=Transmission,
+            transmission=transmission,
         )
 
 

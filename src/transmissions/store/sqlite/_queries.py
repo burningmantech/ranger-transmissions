@@ -51,4 +51,20 @@ queries = Queries(
         insert or ignore into EVENT (ID, NAME) values (:eventID, :eventName)
         """,
     ),
+    createTransmission=Query(
+        "create transmission",
+        """
+        insert into TRANSMISSION (
+            EVENT,
+            STATION, SYSTEM, CHANNEL,
+            START_TIME, DURATION,
+            FILE_NAME, SHA256, TRANSCRIPTION
+        ) values (
+            :eventID,
+            :station, :system, :channel,
+            :startTime, :duration,
+            :path, :sha256, :transcription
+        )
+        """,
+    ),
 )

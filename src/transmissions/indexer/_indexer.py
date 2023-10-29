@@ -283,3 +283,4 @@ class Indexer:
                 "Indexing transmission: {transmission}",
                 transmission=transmission,
             )
+            await store.createTransmission(transmission)

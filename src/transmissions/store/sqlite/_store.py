@@ -147,9 +147,6 @@ class DataStore(DatabaseStore):
         return self._state.db
 
     async def disconnect(self) -> None:
-        """
-        See :meth:`DatabaseStore.disconnect`.
-        """
         if self._state.db is not None:
             self.log.info("Closing SQLite database: {path}", path=self.dbPath)
             self._state.db.close()
@@ -204,15 +201,9 @@ class DataStore(DatabaseStore):
         self._db.commit()
 
     async def dbSchemaVersion(self) -> int:
-        """
-        See :meth:`DatabaseStore.dbSchemaVersion`.
-        """
         return self._dbSchemaVersion(self._db)
 
     async def applySchema(self, sql: str) -> None:
-        """
-        See :meth:`IMSDataStore.applySchema`.
-        """
         try:
             self._db.executescript(sql)
             self._db.validateConstraints()
@@ -221,9 +212,6 @@ class DataStore(DatabaseStore):
             raise StorageError(f"Unable to apply schema: {e}") from e
 
     async def validate(self) -> None:
-        """
-        See :meth:`IMSDataStore.validate`.
-        """
         await super().validate()
 
         valid = True

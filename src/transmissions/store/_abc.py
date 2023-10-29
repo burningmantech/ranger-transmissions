@@ -21,7 +21,7 @@ Transmissions data store abstract base classes.
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
 
-from transmissions.model import Event
+from transmissions.model import Event, Transmission
 
 
 __all__ = ()
@@ -69,4 +69,20 @@ class TXDataStore(ABC):
     async def createEvent(self, event: Event) -> None:
         """
         Create the given event.
+        """
+
+    ###
+    # Transmissions
+    ###
+
+    @abstractmethod
+    async def transmissions(self) -> Iterable[Event]:
+        """
+        Look up all transmissions in this store.
+        """
+
+    @abstractmethod
+    async def createTransmission(self, transmission: Transmission) -> None:
+        """
+        Create the given transmission.
         """
