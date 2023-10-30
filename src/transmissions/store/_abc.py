@@ -20,6 +20,7 @@ Transmissions data store abstract base classes.
 
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
+from datetime import datetime as DateTime
 
 from transmissions.model import Event, Transmission
 
@@ -76,9 +77,18 @@ class TXDataStore(ABC):
     ###
 
     @abstractmethod
-    async def transmissions(self) -> Iterable[Event]:
+    async def transmissions(self) -> Iterable[Transmission]:
         """
         Look up all transmissions in this store.
+        """
+
+    @abstractmethod
+    async def transmission(
+        self, eventID: str, system: str, channel: str, startTime: DateTime
+    ) -> Transmission | None:
+        """
+        Look up the transmission in this store with the given event, system,
+        channel, and start time.
         """
 
     @abstractmethod

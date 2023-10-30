@@ -24,5 +24,6 @@ create table TRANSMISSION (
     SHA256        text,
     TRANSCRIPTION text,
 
-    foreign key (EVENT) references EVENT(ID)
+    foreign key (EVENT) references EVENT(ID),
+    primary key (EVENT, SYSTEM, CHANNEL, START_TIME)
 );

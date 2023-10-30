@@ -8,7 +8,7 @@ from os import walk
 from pathlib import Path
 from re import Pattern
 from re import compile as regex
-from typing import ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
 from attrs import frozen
 from pydub import AudioSegment
@@ -139,6 +139,7 @@ class Indexer:
     log: ClassVar[Logger] = Logger()
 
     _whisper: ClassVar[Whisper] = None
+    _whisperUseFP16 = None
 
     @classmethod
     def whisper(cls) -> Whisper:
@@ -147,7 +148,21 @@ class Indexer:
         """
         if cls._whisper is None:
             Indexer.log.info("Loading Whisper model...")
-            cls._whisper = loadWhisper("medium.en")
+
+            if TYPE_CHECKING:
+                device = "cpu"
+            else:
+                import torch
+
+                if torch.cuda.is_available():
+                    device = "cuda"
+                    cls._whisperUseFP16 = True
+                else:
+                    device = "cpu"
+                    cls._whisperUseFP16 = False
+
+            cls._whisper = loadWhisper("medium.en").to(device)
+
         return cls._whisper
 
     event: Event
@@ -225,7 +240,9 @@ class Indexer:
             sha256Digest = hasher.hexdigest()
 
             # Speech -> text
-            transcription = self.whisper().transcribe(str(path))["text"]
+            transcription = self.whisper().transcribe(
+                str(path), fp16=self._whisperUseFP16
+            )["text"]
 
         else:
             duration = None
@@ -272,6 +289,8 @@ class Indexer:
         """
         Scans files contained within the root directory and adds them to the
         data store.
+        Transcriptions will be lacking duration, SHA256 hash, and
+        transcriptions, which must be computed later.
         """
         events = set(await store.events())
 
@@ -279,8 +298,16 @@ class Indexer:
             await store.createEvent(self.event)
 
         for transmission in self.transmissions():
-            self.log.info(
-                "Indexing transmission: {transmission}",
-                transmission=transmission,
+            existingTransmission = await store.transmission(
+                eventID=transmission.eventID,
+                system=transmission.system,
+                channel=transmission.channel,
+                startTime=transmission.startTime,
             )
-            await store.createTransmission(transmission)
+
+            if existingTransmission is None:
+                self.log.info(
+                    "Indexing: {transmission.path}",
+                    transmission=transmission,
+                )
+                await store.createTransmission(transmission)

@@ -61,6 +61,8 @@ class Queries:
     events: Query
     createEvent: Query
     createEventOrIgnore: Query
+    transmissions: Query
+    transmission: Query
     createTransmission: Query
 
 
@@ -254,8 +256,46 @@ class DatabaseStore(TXDataStore):
     # Transmissions
     ###
 
-    async def transmissions(self) -> Iterable[Event]:
-        pass
+    async def transmissions(self) -> Iterable[Transmission]:
+        raise NotImplementedError()
+
+    async def transmission(
+        self, eventID: str, system: str, channel: str, startTime: DateTime
+    ) -> Transmission | None:
+        found = False
+
+        for row in await self.runQuery(
+            self.query.transmission,
+            dict(
+                eventID=eventID,
+                system=system,
+                channel=channel,
+                startTime=self.asDateTimeValue(startTime),
+            ),
+        ):
+            assert found is not True
+            found = True
+
+            if row["DURATION"] is None:
+                duration = None
+            else:
+                duration = self.fromDurationValue(cast(float, row["DURATION"]))
+
+            return Transmission(
+                eventID=cast(str, row["EVENT"]),
+                station=cast(str, row["STATION"]),
+                system=cast(str, row["SYSTEM"]),
+                channel=cast(str, row["CHANNEL"]),
+                startTime=self.fromDateTimeValue(
+                    cast(float, row["START_TIME"])
+                ),
+                duration=duration,
+                path=Path(cast(str, row["FILE_NAME"])),
+                sha256=cast(str, row["SHA256"]),
+                transcription=cast(str, row["TRANSCRIPTION"]),
+            )
+
+        return None
 
     async def createTransmission(self, transmission: Transmission) -> None:
         if transmission.duration is None:
@@ -272,7 +312,7 @@ class DatabaseStore(TXDataStore):
                 channel=transmission.channel,
                 startTime=self.asDateTimeValue(transmission.startTime),
                 duration=duration,
-                path=str(transmission.path),
+                fileName=str(transmission.path),
                 sha256=transmission.sha256,
                 transcription=transmission.transcription,
             ),

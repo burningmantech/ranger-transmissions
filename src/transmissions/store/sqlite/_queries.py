@@ -24,8 +24,6 @@ from .._db import Queries, Query
 __all__ = ()
 
 
-query_eventID = "select ID from EVENT where NAME = :eventID"
-
 queries = Queries(
     schemaVersion=Query(
         "look up schema version",
@@ -51,19 +49,36 @@ queries = Queries(
         insert or ignore into EVENT (ID, NAME) values (:eventID, :eventName)
         """,
     ),
+    transmissions=Query(
+        "look up transmissions",
+        """
+        select
+            EVENT, STATION, SYSTEM, CHANNEL, START_TIME, DURATION,
+            FILE_NAME, SHA256, TRANSCRIPTION
+        from TRANSMISSION
+        """,
+    ),
+    transmission=Query(
+        "look up transmission",
+        """
+        select
+            EVENT, STATION, SYSTEM, CHANNEL, START_TIME, DURATION,
+            FILE_NAME, SHA256, TRANSCRIPTION
+        from TRANSMISSION
+        where
+            EVENT = :eventID and SYSTEM = :system and CHANNEL = :channel and
+            START_TIME = :startTime
+        """,
+    ),
     createTransmission=Query(
         "create transmission",
         """
         insert into TRANSMISSION (
-            EVENT,
-            STATION, SYSTEM, CHANNEL,
-            START_TIME, DURATION,
+            EVENT, STATION, SYSTEM, CHANNEL, START_TIME, DURATION,
             FILE_NAME, SHA256, TRANSCRIPTION
         ) values (
-            :eventID,
-            :station, :system, :channel,
-            :startTime, :duration,
-            :path, :sha256, :transcription
+            :eventID, :station, :system, :channel, :startTime, :duration,
+            :fileName, :sha256, :transcription
         )
         """,
     ),
