@@ -8,7 +8,7 @@ from os import walk
 from pathlib import Path
 from re import Pattern
 from re import compile as regex
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, ClassVar, cast
 
 from attrs import frozen
 from pydub import AudioSegment
@@ -161,15 +161,29 @@ class Indexer:
                     device = "cpu"
                     cls._whisperUseFP16 = False
 
-            cls._whisper = loadWhisper("medium.en").to(device)
+            cls._whisper = loadWhisper("large").to(device)
 
         return cls._whisper
 
     event: Event
     root: Path
 
+    def _duration(self, path: Path) -> TimeDelta:
+        audio = AudioSegment.from_wav(str(path))
+        return TimeDelta(milliseconds=len(audio))
+
+    def _sha256(self, path: Path) -> str:
+        hasher = sha256()
+        with path.open("rb") as f:
+            hasher.update(f.read())
+        return hasher.hexdigest()
+
+    def _transcription(self, path: Path) -> str:
+        result = self.whisper().transcribe(str(path), fp16=self._whisperUseFP16)
+        return cast(str, result["text"])
+
     def _transmissionFromFile(
-        self, path: Path, _expensiveParts: bool = True
+        self, path: Path, _expensiveParts: bool = False
     ) -> Transmission:
         """
         Returns a Transmission based on the given Path to a file.
@@ -227,23 +241,9 @@ class Indexer:
             channel = match.group("channel2")
 
         if _expensiveParts:
-            # Duration
-
-            audio = AudioSegment.from_wav(str(path))
-            duration = TimeDelta(milliseconds=len(audio))
-
-            # Checksum
-
-            hasher = sha256()
-            with path.open("rb") as f:
-                hasher.update(f.read())
-            sha256Digest = hasher.hexdigest()
-
-            # Speech -> text
-            transcription = self.whisper().transcribe(
-                str(path), fp16=self._whisperUseFP16
-            )["text"]
-
+            duration = self._duration(path)
+            sha256Digest = self._sha256(path)
+            transcription = self._transcription(path)
         else:
             duration = None
             sha256Digest = None
