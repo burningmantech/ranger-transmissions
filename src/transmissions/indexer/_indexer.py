@@ -1,4 +1,5 @@
-from collections.abc import Iterable
+from collections import deque
+from collections.abc import Awaitable, Iterable
 from datetime import datetime as DateTime
 from datetime import timedelta as TimeDelta
 from datetime import timezone as TimeZone
@@ -8,14 +9,18 @@ from os import walk
 from pathlib import Path
 from re import Pattern
 from re import compile as regex
-from typing import TYPE_CHECKING, ClassVar, cast
+from time import sleep
+from typing import TYPE_CHECKING, Any, ClassVar, cast
 
 from attrs import frozen
 from pydub import AudioSegment
+from twisted.internet.defer import Deferred
+from twisted.internet.threads import deferToThread
 from twisted.logger import Logger
 from whisper import Whisper
 from whisper import load_model as loadWhisper
 
+from transmissions.ext.parallel import runInParallel
 from transmissions.model import Event, Transmission
 from transmissions.store import TXDataStore
 
@@ -182,9 +187,7 @@ class Indexer:
         result = self.whisper().transcribe(str(path), fp16=self._whisperUseFP16)
         return cast(str, result["text"])
 
-    def _transmissionFromFile(
-        self, path: Path, _expensiveParts: bool = False
-    ) -> Transmission:
+    def _transmissionFromFile(self, path: Path) -> Transmission:
         """
         Returns a Transmission based on the given Path to a file.
         """
@@ -240,14 +243,9 @@ class Indexer:
         except IndexError:
             channel = match.group("channel2")
 
-        if _expensiveParts:
-            duration = self._duration(path)
-            sha256Digest = self._sha256(path)
-            transcription = self._transcription(path)
-        else:
-            duration = None
-            sha256Digest = None
-            transcription = None
+        duration = None
+        sha256Digest = None
+        transcription = None
 
         # Return result
 
@@ -280,12 +278,109 @@ class Indexer:
                 filenames=len(filenames),
             )
             for filename in filenames:
+                path = Path(dirpath) / filename
+                self.log.info("Found audio file: {path}", path=path)
                 try:
-                    yield self._transmissionFromFile(Path(dirpath) / filename)
+                    yield self._transmissionFromFile(path)
                 except InvalidFileError as e:
                     self.log.error("{error}", error=e)
 
-    async def indexIntoStore(self, store: TXDataStore) -> None:
+    async def _addDuration(
+        self,
+        store: TXDataStore,
+        transmission: Transmission,
+    ) -> None:
+        self.log.info(
+            "Computing duration for {transmission}", transmission=transmission
+        )
+        duration = await deferToThread(self._duration, transmission.path)
+        await store.setTransmissionDuration(
+            eventID=transmission.eventID,
+            system=transmission.system,
+            channel=transmission.channel,
+            startTime=transmission.startTime,
+            duration=duration,
+        )
+
+    async def _addSignature(
+        self,
+        store: TXDataStore,
+        transmission: Transmission,
+    ) -> None:
+        self.log.info(
+            "Computing SHA256 for {transmission}", transmission=transmission
+        )
+        sha256 = await deferToThread(self._sha256, transmission.path)
+        await store.setTransmissionSHA256(
+            eventID=transmission.eventID,
+            system=transmission.system,
+            channel=transmission.channel,
+            startTime=transmission.startTime,
+            sha256=sha256,
+        )
+
+    async def _addTranscription(
+        self,
+        store: TXDataStore,
+        transmission: Transmission,
+    ) -> None:
+        self.log.info(
+            "Computing transcription for {transmission}",
+            transmission=transmission,
+        )
+        transcription = await deferToThread(
+            self._transcription, transmission.path
+        )
+        await store.setTransmissionTranscription(
+            eventID=transmission.eventID,
+            system=transmission.system,
+            channel=transmission.channel,
+            startTime=transmission.startTime,
+            transcription=transcription,
+        )
+
+    async def _ensureTransmission(
+        self,
+        store: TXDataStore,
+        transmission: Transmission,
+        taskQueue: deque[Awaitable],
+        *,
+        computeChecksum: bool,
+        computeTranscription: bool,
+        computeDuration: bool,
+    ) -> None:
+        self.log.info("Ensuring {transmission}", transmission=transmission)
+        existingTransmission = await store.transmission(
+            eventID=transmission.eventID,
+            system=transmission.system,
+            channel=transmission.channel,
+            startTime=transmission.startTime,
+        )
+        if existingTransmission is None:
+            await store.createTransmission(transmission)
+        else:
+            # FIXME: If these don't match, we could clean up the DB
+            assert transmission.station == existingTransmission.station
+            assert transmission.path == existingTransmission.path
+            transmission = existingTransmission
+
+        if computeChecksum and transmission.sha256 is None:
+            taskQueue.append(self._addSignature(store, transmission))
+
+        if computeDuration and transmission.duration is None:
+            taskQueue.append(self._addDuration(store, transmission))
+
+        if computeTranscription and transmission.transcription is None:
+            taskQueue.append(self._addTranscription(store, transmission))
+
+    async def indexIntoStore(
+        self,
+        store: TXDataStore,
+        *,
+        computeChecksum: bool = True,
+        computeTranscription: bool = True,
+        computeDuration: bool = True,
+    ) -> None:
         """
         Scans files contained within the root directory and adds them to the
         data store.
@@ -297,17 +392,55 @@ class Indexer:
         if self.event not in events:
             await store.createEvent(self.event)
 
-        for transmission in self.transmissions():
-            existingTransmission = await store.transmission(
-                eventID=transmission.eventID,
-                system=transmission.system,
-                channel=transmission.channel,
-                startTime=transmission.startTime,
-            )
+        taskQueue: deque[Awaitable[Any]] = deque()
+        scanComplete = False
 
-            if existingTransmission is None:
-                self.log.info(
-                    "Indexing: {transmission.path}",
-                    transmission=transmission,
+        def scan() -> None:
+            nonlocal scanComplete
+            for transmission in self.transmissions():
+                # Note that the data store may not be thread safe but we are OK
+                # here because we aren't doing the actual store work in the
+                # scanning thread; we are merely adding it to a queue, which is
+                # processed on the main thread.
+                taskQueue.append(
+                    self._ensureTransmission(
+                        store,
+                        transmission,
+                        taskQueue,
+                        computeChecksum=computeChecksum,
+                        computeTranscription=computeTranscription,
+                        computeDuration=computeDuration,
+                    )
                 )
-                await store.createTransmission(transmission)
+                break
+            scanComplete = True
+
+        scanTask = deferToThread(scan)
+
+        if computeTranscription:
+            # Load Whisper before we start tasks
+            self.whisper()
+
+        def tasks() -> Iterable[Deferred[Any]]:
+            """
+            Yields the next task to the parallel task runner.
+            """
+            while True:
+                # yields tasks from the task queue.
+                # We don't iterate over for queue in a for loop, because we are
+                # altering it as we go.
+                while taskQueue:
+                    yield cast(Deferred[Any], taskQueue.pop())
+                # The queue is empty, but don't break unless the scanning
+                # thread is also done.
+                if scanComplete:
+                    break
+                # The scanning thread is not done yet.
+                # Sleep the main thread to let the scanning thread add more
+                # tasks to the queue.
+                sleep(0.01)
+
+        await runInParallel(tasks(), maxTasks=32)
+
+        assert scanComplete
+        await scanTask

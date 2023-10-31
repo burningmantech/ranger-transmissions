@@ -325,6 +325,70 @@ class DatabaseStore(TXDataStore):
             transmission=transmission,
         )
 
+    async def setTransmissionDuration(
+        self,
+        eventID: str,
+        system: str,
+        channel: str,
+        startTime: DateTime,
+        duration: TimeDelta,
+    ) -> None:
+        """
+        Set the duration for the given transmission.
+        """
+        self.log.info(
+            "Set duration to {duration} for: {startTime} [{system}: {channel}]",
+            storeWriteClass=Transmission,
+            eventID=eventID,
+            system=system,
+            channel=channel,
+            startTime=startTime,
+            duration=duration,
+        )
+
+    async def setTransmissionSHA256(
+        self,
+        eventID: str,
+        system: str,
+        channel: str,
+        startTime: DateTime,
+        sha256: str,
+    ) -> None:
+        """
+        Set the SHA256 hash digest for the given transmission.
+        """
+        self.log.info(
+            "Set SHA256 to {sha256} for: " "{startTime} [{system}: {channel}]",
+            storeWriteClass=Transmission,
+            eventID=eventID,
+            system=system,
+            channel=channel,
+            startTime=startTime,
+            sha256=sha256,
+        )
+
+    async def setTransmissionTranscription(
+        self,
+        eventID: str,
+        system: str,
+        channel: str,
+        startTime: DateTime,
+        transcription: str,
+    ) -> None:
+        """
+        Set the transcription text for the given transmission.
+        """
+        self.log.info(
+            "Set transcription to {transcription!r} for: "
+            "{startTime} [{system}: {channel}]",
+            storeWriteClass=Transmission,
+            eventID=eventID,
+            system=system,
+            channel=channel,
+            startTime=startTime,
+            transcription=transcription,
+        )
+
 
 @frozen(kw_only=True)
 class DatabaseManager:

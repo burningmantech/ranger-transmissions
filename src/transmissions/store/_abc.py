@@ -21,6 +21,7 @@ Transmissions data store abstract base classes.
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
 from datetime import datetime as DateTime
+from datetime import timedelta as TimeDelta
 
 from transmissions.model import Event, Transmission
 
@@ -95,4 +96,43 @@ class TXDataStore(ABC):
     async def createTransmission(self, transmission: Transmission) -> None:
         """
         Create the given transmission.
+        """
+
+    @abstractmethod
+    async def setTransmissionDuration(
+        self,
+        eventID: str,
+        system: str,
+        channel: str,
+        startTime: DateTime,
+        duration: TimeDelta,
+    ) -> None:
+        """
+        Set the duration for the given transmission.
+        """
+
+    @abstractmethod
+    async def setTransmissionSHA256(
+        self,
+        eventID: str,
+        system: str,
+        channel: str,
+        startTime: DateTime,
+        sha256: str,
+    ) -> None:
+        """
+        Set the SHA256 hash digest for the given transmission.
+        """
+
+    @abstractmethod
+    async def setTransmissionTranscription(
+        self,
+        eventID: str,
+        system: str,
+        channel: str,
+        startTime: DateTime,
+        transcription: str,
+    ) -> None:
+        """
+        Set the transcription text for the given transmission.
         """
