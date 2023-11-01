@@ -24,6 +24,14 @@ from .._db import Queries, Query
 __all__ = ()
 
 
+template_setTransmissionAttribute = """
+    update TRANSMISSION set {column} = :value
+    where
+        EVENT = :eventID and SYSTEM = :system and CHANNEL = :channel and
+        START_TIME = :startTime
+    """
+
+
 queries = Queries(
     schemaVersion=Query(
         "look up schema version",
@@ -81,5 +89,17 @@ queries = Queries(
             :fileName, :sha256, :transcription
         )
         """,
+    ),
+    setTransmission_duration=Query(
+        "set transmission duration",
+        template_setTransmissionAttribute.format(column="DURATION"),
+    ),
+    setTransmission_sha256=Query(
+        "set transmission SHA 256",
+        template_setTransmissionAttribute.format(column="SHA256"),
+    ),
+    setTransmission_transcription=Query(
+        "set transmission transcription",
+        template_setTransmissionAttribute.format(column="TRANSCRIPTION"),
     ),
 )

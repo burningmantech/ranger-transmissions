@@ -64,6 +64,9 @@ class Queries:
     transmissions: Query
     transmission: Query
     createTransmission: Query
+    setTransmission_duration: Query
+    setTransmission_sha256: Query
+    setTransmission_transcription: Query
 
 
 @frozen(kw_only=True)
@@ -263,7 +266,7 @@ class DatabaseStore(TXDataStore):
                 station=cast(str, row["STATION"]),
                 system=cast(str, row["SYSTEM"]),
                 channel=cast(str, row["CHANNEL"]),
-                startTime=cast(DateTime, row["START_TIME"]),
+                startTime=self.fromDateTimeValue(row["START_TIME"]),
                 duration=cast(TimeDelta | None, row["DURATION"]),
                 path=cast(Path, row["FILE_NAME"]),
                 sha256=cast(str | None, row["SHA256"]),
@@ -349,6 +352,17 @@ class DatabaseStore(TXDataStore):
         """
         Set the duration for the given transmission.
         """
+        await self.runOperation(
+            self.query.setTransmission_duration,
+            dict(
+                eventID=eventID,
+                system=system,
+                channel=channel,
+                startTime=self.asDateTimeValue(startTime),
+                value=self.asDurationValue(duration),
+            ),
+        )
+
         self.log.info(
             "Set duration to {duration} for: {startTime} [{system}: {channel}]",
             storeWriteClass=Transmission,
@@ -370,6 +384,17 @@ class DatabaseStore(TXDataStore):
         """
         Set the SHA256 hash digest for the given transmission.
         """
+        await self.runOperation(
+            self.query.setTransmission_sha256,
+            dict(
+                eventID=eventID,
+                system=system,
+                channel=channel,
+                startTime=self.asDateTimeValue(startTime),
+                value=sha256,
+            ),
+        )
+
         self.log.info(
             "Set SHA256 to {sha256} for: " "{startTime} [{system}: {channel}]",
             storeWriteClass=Transmission,
@@ -391,6 +416,17 @@ class DatabaseStore(TXDataStore):
         """
         Set the transcription text for the given transmission.
         """
+        await self.runOperation(
+            self.query.setTransmission_transcription,
+            dict(
+                eventID=eventID,
+                system=system,
+                channel=channel,
+                startTime=self.asDateTimeValue(startTime),
+                value=transcription,
+            ),
+        )
+
         self.log.info(
             "Set transcription to {transcription!r} for: "
             "{startTime} [{system}: {channel}]",

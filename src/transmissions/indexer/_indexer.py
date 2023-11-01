@@ -439,7 +439,7 @@ class Indexer:
                 # tasks to the queue.
                 sleep(0.01)
 
-        await runInParallel(tasks(), maxTasks=32)
+        await runInParallel(tasks(), maxTasks=8)
 
         assert scanComplete
         await scanTask
