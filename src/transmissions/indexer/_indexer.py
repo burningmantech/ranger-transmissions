@@ -412,7 +412,6 @@ class Indexer:
                         computeDuration=computeDuration,
                     )
                 )
-                break
             scanComplete = True
 
         scanTask = deferToThread(scan)
