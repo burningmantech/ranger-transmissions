@@ -257,7 +257,20 @@ class DatabaseStore(TXDataStore):
     ###
 
     async def transmissions(self) -> Iterable[Transmission]:
-        raise NotImplementedError()
+        return (
+            Transmission(
+                eventID=cast(str, row["EVENT"]),
+                station=cast(str, row["STATION"]),
+                system=cast(str, row["SYSTEM"]),
+                channel=cast(str, row["CHANNEL"]),
+                startTime=cast(DateTime, row["START_TIME"]),
+                duration=cast(TimeDelta | None, row["DURATION"]),
+                path=cast(Path, row["FILE_NAME"]),
+                sha256=cast(str | None, row["SHA256"]),
+                transcription=cast(str | None, row["TRANSCRIPTION"]),
+            )
+            for row in await self.runQuery(self.query.transmissions)
+        )
 
     async def transmission(
         self, eventID: str, system: str, channel: str, startTime: DateTime
