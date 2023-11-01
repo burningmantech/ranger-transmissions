@@ -1,8 +1,10 @@
 from collections.abc import Iterable
+from datetime import datetime as DateTime
 from pathlib import Path
 from typing import cast
 
 import click
+from arrow import get as makeArrow
 from attrs import frozen
 from click import (
     Context,
@@ -13,13 +15,16 @@ from click import (
     pass_context,
     version_option,
 )
+from rich.box import DOUBLE_EDGE as RICH_DOUBLE_EDGE
+from rich.console import Console as RichConsole
+from rich.table import Table as RichTable
 from twisted.internet.interfaces import IReactorCore
 from twisted.internet.task import react
 
 from transmissions.ext.click import readConfig
 from transmissions.ext.logger import startLogging
 from transmissions.indexer import Indexer
-from transmissions.model import Event
+from transmissions.model import Event, Transmission
 
 from ._store import StoreFactory, storeFactoryFromConfig
 
@@ -138,6 +143,61 @@ def configuredEventsFromContext(ctx: Context) -> Iterable[tuple[Event, Path]]:
         yield (event, sourcePath)
 
 
+def printEvents(events: Iterable[Event]) -> None:
+    console = RichConsole()
+
+    table = RichTable(show_header=True, box=RICH_DOUBLE_EDGE)
+    table.add_column("ID")
+    table.add_column("NAME")
+
+    for event in events:
+        table.add_row(event.id, event.name)
+
+    console.print(table)
+
+
+def printTransmissions(transmissions: Iterable[Transmission]) -> None:
+    console = RichConsole()
+
+    table = RichTable(show_header=True, box=RICH_DOUBLE_EDGE)
+    table.add_column("Event")
+    table.add_column("Station")
+    table.add_column("System")
+    table.add_column("Channel")
+    table.add_column("Start")
+    table.add_column("Duration")
+    table.add_column("Text")
+
+    unknown = "-?-"
+
+    def displayDateTime(dateTime: DateTime) -> str:
+        arrow = makeArrow(dateTime).to("UTC")
+        return arrow.format("MM/DD HH:mm:ss")
+
+    for transmission in transmissions:
+        if transmission.duration is None:
+            duration = unknown
+        else:
+            duration = str(transmission.duration)
+
+        if transmission.transcription is None:
+            transcription = unknown
+        else:
+            transcription = transmission.transcription
+
+        table.add_row(
+            transmission.eventID,
+            transmission.station,
+            transmission.system,
+            transmission.channel,
+            displayDateTime(transmission.startTime),
+            duration,
+            transcription,
+        )
+
+    console.print(table)
+
+
 @main.command()
 @pass_context
 def index(ctx: Context) -> None:
@@ -174,8 +234,7 @@ def events(ctx: Context) -> None:
         try:
             store = await storeFactory()
             try:
-                for event in await store.events():
-                    click.echo(str(event))
+                printEvents(await store.events())
             finally:
                 await store.close()
         except KeyboardInterrupt:
@@ -196,8 +255,7 @@ def transmissions(ctx: Context) -> None:
         try:
             store = await storeFactory()
             try:
-                for transmission in await store.transmissions():
-                    click.echo(str(transmission))
+                printTransmissions(await store.transmissions())
             finally:
                 await store.close()
         except KeyboardInterrupt:
