@@ -1,4 +1,4 @@
-from collections.abc import Iterable
+from collections.abc import Awaitable, Callable, Iterable
 from datetime import datetime as DateTime
 from pathlib import Path
 from typing import cast
@@ -25,6 +25,7 @@ from transmissions.ext.click import readConfig
 from transmissions.ext.logger import startLogging
 from transmissions.indexer import Indexer
 from transmissions.model import Event, Transmission
+from transmissions.store import TXDataStore
 
 from ._store import StoreFactory, storeFactoryFromConfig
 
@@ -143,6 +144,28 @@ def configuredEventsFromContext(ctx: Context) -> Iterable[tuple[Event, Path]]:
         yield (event, sourcePath)
 
 
+Application = Callable[[TXDataStore], Awaitable[None]]
+
+
+def run(ctx: Context, app: Application) -> None:
+    """
+    Interact with the data.
+    """
+    storeFactory = storeFactoryFromContext(ctx)
+
+    async def runInReactor(reactor: IReactorCore) -> None:
+        try:
+            store = await storeFactory()
+            try:
+                await app(store)
+            finally:
+                await store.close()
+        except KeyboardInterrupt:
+            click.echo("Interrupted.")
+
+    react(runInReactor)
+
+
 def printEvents(events: Iterable[Event]) -> None:
     console = RichConsole()
 
@@ -204,22 +227,14 @@ def index(ctx: Context) -> None:
     """
     Index audio files.
     """
-    storeFactory = storeFactoryFromContext(ctx)
     configuredEvents = configuredEventsFromContext(ctx)
 
-    async def run(reactor: IReactorCore) -> None:
-        try:
-            store = await storeFactory()
-            try:
-                for event, sourcePath in configuredEvents:
-                    indexer = Indexer(event=event, root=sourcePath)
-                    await indexer.indexIntoStore(store)
-            finally:
-                await store.close()
-        except KeyboardInterrupt:
-            click.echo("Interrupted.")
+    async def app(store: TXDataStore) -> None:
+        for event, sourcePath in configuredEvents:
+            indexer = Indexer(event=event, root=sourcePath)
+            await indexer.indexIntoStore(store)
 
-    react(run)
+    run(ctx, app)
 
 
 @main.command()
@@ -228,19 +243,11 @@ def events(ctx: Context) -> None:
     """
     List events.
     """
-    storeFactory = storeFactoryFromContext(ctx)
 
-    async def run(reactor: IReactorCore) -> None:
-        try:
-            store = await storeFactory()
-            try:
-                printEvents(await store.events())
-            finally:
-                await store.close()
-        except KeyboardInterrupt:
-            click.echo("Interrupted.")
+    async def app(store: TXDataStore) -> None:
+        printEvents(await store.events())
 
-    react(run)
+    run(ctx, app)
 
 
 @main.command()
@@ -249,16 +256,8 @@ def transmissions(ctx: Context) -> None:
     """
     List transmissions.
     """
-    storeFactory = storeFactoryFromContext(ctx)
 
-    async def run(reactor: IReactorCore) -> None:
-        try:
-            store = await storeFactory()
-            try:
-                printTransmissions(await store.transmissions())
-            finally:
-                await store.close()
-        except KeyboardInterrupt:
-            click.echo("Interrupted.")
+    async def app(store: TXDataStore) -> None:
+        printTransmissions(await store.transmissions())
 
-    react(run)
+    run(ctx, app)
