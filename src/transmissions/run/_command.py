@@ -1,7 +1,7 @@
 from collections.abc import Awaitable, Callable, Iterable
 from datetime import datetime as DateTime
 from pathlib import Path
-from typing import cast
+from typing import Any, cast
 
 import click
 from arrow import get as makeArrow
@@ -18,6 +18,8 @@ from click import (
 from rich.box import DOUBLE_EDGE as RICH_DOUBLE_EDGE
 from rich.console import Console as RichConsole
 from rich.table import Table as RichTable
+from twisted.internet import asyncioreactor as asyncioReactor
+from twisted.internet import default as defaultReactor
 from twisted.internet.interfaces import IReactorCore
 from twisted.internet.task import react
 
@@ -148,10 +150,14 @@ def configuredEventsFromContext(ctx: Context) -> Iterable[tuple[Event, Path]]:
 Application = Callable[[TXDataStore], Awaitable[None]]
 
 
-def run(ctx: Context, app: Application) -> None:
+def run(
+    ctx: Context, app: Application, *, reactor: Any = defaultReactor
+) -> None:
     """
     Interact with the data.
     """
+    reactor.install()
+
     storeFactory = storeFactoryFromContext(ctx)
 
     async def runInReactor(reactor: IReactorCore) -> None:
@@ -272,7 +278,8 @@ def application(ctx: Context) -> None:
     """
 
     async def app(store: TXDataStore) -> None:
-        app = TransmissionsApp()
+        transmissions = frozenset(await store.transmissions())
+        app = TransmissionsApp(transmissions)
         app.run()
 
-    run(ctx, app)
+    run(ctx, app, reactor=asyncioReactor)
