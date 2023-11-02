@@ -27,6 +27,7 @@ from transmissions.indexer import Indexer
 from transmissions.model import Event, Transmission
 from transmissions.store import TXDataStore
 
+from ._application import TransmissionsApp
 from ._store import StoreFactory, storeFactoryFromConfig
 
 
@@ -259,5 +260,19 @@ def transmissions(ctx: Context) -> None:
 
     async def app(store: TXDataStore) -> None:
         printTransmissions(await store.transmissions())
+
+    run(ctx, app)
+
+
+@main.command()
+@pass_context
+def application(ctx: Context) -> None:
+    """
+    Interactive UI.
+    """
+
+    async def app(store: TXDataStore) -> None:
+        app = TransmissionsApp()
+        app.run()
 
     run(ctx, app)
