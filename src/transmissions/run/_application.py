@@ -149,15 +149,16 @@ class TransmissionList(Static):
     transmissions: reactive[tuple[TransmissionTuple, ...]] = reactive(())
 
     def compose(self) -> ComposeResult:
-        yield DataTable()
+        yield DataTable(
+            cursor_type="row",
+            zebra_stripes=True,
+        )
 
     def watch_transmissions(self, transmissions: tuple[int]) -> None:
         self.updateTransmissions()
 
     def on_mount(self) -> None:
         table = self.query_one(DataTable)
-        table.cursor_type = "row"
-        table.zebra_stripes = True
         table.add_column("Event", key=self.Column.event)
         table.add_column("Station", key=self.Column.station)
         table.add_column("System", key=self.Column.system)
