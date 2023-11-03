@@ -1,7 +1,7 @@
 from collections.abc import Iterable
 from datetime import datetime as DateTime
 from enum import StrEnum, auto
-from typing import ClassVar, cast
+from typing import Any, ClassVar, cast
 
 from arrow import get as makeArrow
 from textual.app import App, ComposeResult
@@ -187,7 +187,7 @@ class TransmissionList(Static):
                 key=transmission[0],
             )
 
-        def sortKey(startTime: str) -> str:
+        def sortKey(startTime: str) -> Any:
             return dateTimeFromText(startTime)
 
         table.sort(self.Column.startTime, key=sortKey)
