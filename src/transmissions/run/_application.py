@@ -1,4 +1,5 @@
 from collections.abc import Iterable
+from enum import StrEnum, auto
 from typing import ClassVar, cast
 
 from arrow import get as makeArrow
@@ -122,6 +123,17 @@ class TransmissionList(Static):
     List of transmissions.
     """
 
+    class Column(StrEnum):
+        event = auto()
+        station = auto()
+        system = auto()
+        channel = auto()
+        start = auto()
+        duration = auto()
+        path = auto()
+        sha256 = auto()
+        transcription = auto()
+
     transmissions: reactive[tuple[TransmissionTuple, ...]] = reactive(())
 
     def compose(self) -> ComposeResult:
@@ -132,15 +144,15 @@ class TransmissionList(Static):
 
     def on_mount(self) -> None:
         table = self.query_one(DataTable)
-        table.add_column("Event")
-        table.add_column("Station")
-        table.add_column("System")
-        table.add_column("Channel")
-        table.add_column("Start")
-        # table.add_column("Duration")
-        # table.add_column("Path")
-        # table.add_column("SHA256")
-        table.add_column("Transcription")
+        table.add_column("Event", key=self.Column.event)
+        table.add_column("Station", key=self.Column.station)
+        table.add_column("System", key=self.Column.system)
+        table.add_column("Channel", key=self.Column.channel)
+        table.add_column("Start", key=self.Column.start)
+        # table.add_column("Duration", key=self.Column.duration)
+        # table.add_column("Path", key=self.Column.path)
+        # table.add_column("SHA256", key=self.Column.sha256)
+        table.add_column("Transcription", key=self.Column.transcription)
 
     def updateTransmissions(self) -> None:
         self.log(f"Updating transmissions ({len(self.transmissions)})")
