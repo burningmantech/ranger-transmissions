@@ -1,7 +1,3 @@
-ci:
-  skip:
-    - check-manifest
-
 repos:
 
   - repo: https://github.com/asottile/pyupgrade
@@ -91,3 +87,4 @@ repos:
     rev: "0.49"
     hooks:
       - id: check-manifest
+        stages: [push]
