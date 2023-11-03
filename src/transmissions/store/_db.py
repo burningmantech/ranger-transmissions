@@ -144,11 +144,14 @@ class DatabaseStore(TXDataStore):
         return duration.total_seconds()
 
     @staticmethod
-    def fromDurationValue(value: ParameterValue) -> TimeDelta:
+    def fromDurationValue(value: ParameterValue) -> TimeDelta | None:
         """
         Convert a duration value from the database to a :class:`TimeDelta`.
         This implementation requires :obj:`value` to be a :class:`float`.
         """
+        if value is None:
+            return None
+
         if not isinstance(value, float):
             raise TypeError("Duration in SQLite store must be a float")
 
@@ -266,8 +269,12 @@ class DatabaseStore(TXDataStore):
                 station=cast(str, row["STATION"]),
                 system=cast(str, row["SYSTEM"]),
                 channel=cast(str, row["CHANNEL"]),
-                startTime=self.fromDateTimeValue(row["START_TIME"]),
-                duration=cast(TimeDelta | None, row["DURATION"]),
+                startTime=self.fromDateTimeValue(
+                    cast(float, row["START_TIME"])
+                ),
+                duration=self.fromDurationValue(
+                    cast(float | None, row["DURATION"])
+                ),
                 path=cast(Path, row["FILE_NAME"]),
                 sha256=cast(str | None, row["SHA256"]),
                 transcription=cast(str | None, row["TRANSCRIPTION"]),
@@ -292,11 +299,6 @@ class DatabaseStore(TXDataStore):
             assert found is not True
             found = True
 
-            if row["DURATION"] is None:
-                duration = None
-            else:
-                duration = self.fromDurationValue(cast(float, row["DURATION"]))
-
             return Transmission(
                 eventID=cast(str, row["EVENT"]),
                 station=cast(str, row["STATION"]),
@@ -305,7 +307,9 @@ class DatabaseStore(TXDataStore):
                 startTime=self.fromDateTimeValue(
                     cast(float, row["START_TIME"])
                 ),
-                duration=duration,
+                duration=self.fromDurationValue(
+                    cast(float | None, row["DURATION"])
+                ),
                 path=Path(cast(str, row["FILE_NAME"])),
                 sha256=cast(str, row["SHA256"]),
                 transcription=cast(str, row["TRANSCRIPTION"]),
