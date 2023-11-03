@@ -201,7 +201,7 @@ def printTransmissions(transmissions: Iterable[Transmission]) -> None:
     unknown = "-?-"
 
     def displayDateTime(dateTime: DateTime) -> str:
-        arrow = makeArrow(dateTime).to("UTC")
+        arrow = makeArrow(dateTime).to("US/Pacific")
         return arrow.format("MM/DD HH:mm:ss")
 
     for transmission in transmissions:
