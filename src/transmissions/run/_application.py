@@ -4,9 +4,12 @@ from enum import StrEnum, auto
 from typing import Any, ClassVar, cast
 
 from arrow import get as makeArrow
+from textual import on
 from textual.app import App, ComposeResult
+from textual.message import Message
 from textual.reactive import reactive
 from textual.screen import Screen
+from textual.widget import Widget
 from textual.widgets import DataTable, Input, Static
 
 from transmissions.model import Transmission
@@ -136,6 +139,10 @@ class TransmissionList(Static):
     """
 
     class Column(StrEnum):
+        """
+        Column Keys
+        """
+
         event = auto()
         station = auto()
         system = auto()
@@ -145,6 +152,20 @@ class TransmissionList(Static):
         path = auto()
         sha256 = auto()
         transcription = auto()
+
+    class TransmissionSelected(Message):
+        """
+        Transmission selected message.
+        """
+
+        def __init__(self, control: Widget, key: str):
+            self._control = control
+            self.key = key
+            super().__init__()
+
+        @property
+        def control(self) -> Widget:
+            return self._control
 
     transmissions: reactive[tuple[TransmissionTuple, ...]] = reactive(())
 
@@ -170,7 +191,7 @@ class TransmissionList(Static):
         table.add_column("Transcription", key=self.Column.transcription)
 
     def updateTransmissions(self) -> None:
-        self.log(f"Updating transmissions ({len(self.transmissions)})")
+        self.log(f"Displaying {len(self.transmissions)} transmissions")
         table = self.query_one(DataTable)
         table.clear()
         for transmission in self.transmissions:
@@ -191,6 +212,12 @@ class TransmissionList(Static):
             return dateTimeFromText(startTime)
 
         table.sort(self.Column.startTime, key=sortKey)
+
+    @on(DataTable.RowSelected)
+    def handle_row_selected(self, message: DataTable.RowSelected) -> None:
+        key = message.row_key.value
+        assert key is not None
+        self.post_message(self.TransmissionSelected(self, key))
 
 
 class TransmissionDetails(Static):
@@ -235,6 +262,13 @@ class TransmissionsScreen(Screen):
             id="Footer",
         )
         yield BodyContainer(id="Body")
+
+    @on(TransmissionList.TransmissionSelected)
+    def handle_transmission_selected(
+        self, message: TransmissionList.TransmissionSelected
+    ) -> None:
+        transmission = self.transmissions[message.key]
+        self.log(f"Transmission selected: {transmission}")
 
 
 class TransmissionsApp(App):
