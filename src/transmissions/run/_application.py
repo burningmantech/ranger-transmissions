@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 from typing import ClassVar, cast
 
 from textual.app import App, ComposeResult
@@ -12,17 +13,31 @@ __all__ = ()
 
 
 TransmissionTuple = tuple[
-    str, str, str, str, str, float | None, str, str | None, str | None
+    str, str, str, str, str, str, float | None, str, str | None, str | None
 ]
 
 
-def transmissionAsTuple(transmission: Transmission) -> TransmissionTuple:
+def transmissionKey(transmission: Transmission) -> str:
+    return ":".join(
+        (
+            transmission.eventID,
+            transmission.system,
+            transmission.channel,
+            str(transmission.startTime),
+        )
+    )
+
+
+def transmissionAsTuple(
+    key: str, transmission: Transmission
+) -> TransmissionTuple:
     if transmission.duration is None:
         duration = None
     else:
         duration = transmission.duration.total_seconds()
 
     return (
+        key,
         transmission.eventID,
         transmission.station,
         transmission.system,
@@ -112,17 +127,6 @@ class TransmissionList(Static):
     def watch_transmissions(self, transmissions: tuple[int]) -> None:
         self.updateTransmissions()
 
-    @staticmethod
-    def keyForTransmission(transmission: Transmission) -> str:
-        return ":".join(
-            (
-                transmission.eventID,
-                transmission.system,
-                transmission.channel,
-                str(transmission.startTime),
-            )
-        )
-
     def on_mount(self) -> None:
         table = self.query_one(DataTable)
         table.add_column("Event")
@@ -141,15 +145,16 @@ class TransmissionList(Static):
         table.clear()
         for transmission in self.transmissions:
             table.add_row(
-                transmission[0],  # eventID
-                transmission[1],  # station
-                transmission[2],  # system
-                transmission[3],  # channel
-                transmission[4],  # startTime
-                # transmission[5],  # duration
-                # transmission[6],  # path
-                # transmission[7],  # sha256
-                transmission[8],  # transcription
+                transmission[1],  # eventID
+                transmission[2],  # station
+                transmission[3],  # system
+                transmission[4],  # channel
+                transmission[5],  # startTime
+                # transmission[6],  # duration
+                # transmission[7],  # path
+                # transmission[8],  # sha256
+                transmission[9],  # transcription
+                key=transmission[0],
             )
 
 
@@ -173,7 +178,7 @@ class TransmissionsScreen(Screen):
     Transmissions screen.
     """
 
-    def __init__(self, transmissions: frozenset[Transmission]) -> None:
+    def __init__(self, transmissions: dict[str, Transmission]) -> None:
         self.transmissions = transmissions
         super().__init__()
 
@@ -182,8 +187,8 @@ class TransmissionsScreen(Screen):
             TransmissionList, self.query_one("TransmissionList")
         )
         transmissions = tuple(
-            transmissionAsTuple(transmission)
-            for transmission in self.transmissions
+            transmissionAsTuple(key, transmission)
+            for key, transmission in self.transmissions.items()
         )
         transmissionList.transmissions = transmissions
 
@@ -207,8 +212,11 @@ class TransmissionsApp(App):
 
     BINDINGS = [("q", "quit", "Quit application")]
 
-    def __init__(self, transmissions: frozenset[Transmission]) -> None:
-        self.transmissions = transmissions
+    def __init__(self, transmissions: Iterable[Transmission]) -> None:
+        self.transmissions = {
+            transmissionKey(transmission): transmission
+            for transmission in transmissions
+        }
         super().__init__()
 
     def on_mount(self) -> None:
