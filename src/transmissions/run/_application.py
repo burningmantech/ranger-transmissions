@@ -156,6 +156,7 @@ class TransmissionList(Static):
 
     def on_mount(self) -> None:
         table = self.query_one(DataTable)
+        table.cursor_type = "row"
         table.add_column("Event", key=self.Column.event)
         table.add_column("Station", key=self.Column.station)
         table.add_column("System", key=self.Column.system)
