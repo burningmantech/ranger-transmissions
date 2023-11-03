@@ -1,6 +1,7 @@
 from collections.abc import Iterable
 from typing import ClassVar, cast
 
+from arrow import get as makeArrow
 from textual.app import App, ComposeResult
 from textual.reactive import reactive
 from textual.screen import Screen
@@ -31,6 +32,8 @@ def transmissionKey(transmission: Transmission) -> str:
 def transmissionAsTuple(
     key: str, transmission: Transmission
 ) -> TransmissionTuple:
+    startTime = makeArrow(transmission.startTime).to("US/Pacific")
+
     if transmission.duration is None:
         duration = None
     else:
@@ -42,7 +45,7 @@ def transmissionAsTuple(
         transmission.station,
         transmission.system,
         transmission.channel,
-        str(transmission.startTime),
+        startTime.format("ddd MM/DD HH:mm:ss"),
         duration,
         str(transmission.path),
         transmission.sha256,

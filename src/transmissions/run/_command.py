@@ -278,8 +278,7 @@ def application(ctx: Context) -> None:
     """
 
     async def app(store: TXDataStore) -> None:
-        transmissions = frozenset(await store.transmissions())
-        app = TransmissionsApp(transmissions)
+        app = TransmissionsApp(await store.transmissions())
         app.run()
 
     run(ctx, app, reactor=asyncioReactor)
