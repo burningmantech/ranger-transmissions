@@ -1,4 +1,5 @@
 from collections.abc import Iterable
+from datetime import datetime as DateTime
 from enum import StrEnum, auto
 from typing import ClassVar, cast
 
@@ -30,11 +31,22 @@ def transmissionKey(transmission: Transmission) -> str:
     )
 
 
+_dateTimeDisplayFormat = "ddd MM/DD HH:mm:ss"
+
+
+def dateTimeAsText(datetime: DateTime) -> str:
+    arrow = makeArrow(datetime).to("US/Pacific")
+    return arrow.format(_dateTimeDisplayFormat)
+
+
+def dateTimeFromText(text: str) -> DateTime:
+    arrow = makeArrow(text, _dateTimeDisplayFormat)
+    return arrow.datetime
+
+
 def transmissionAsTuple(
     key: str, transmission: Transmission
 ) -> TransmissionTuple:
-    startTime = makeArrow(transmission.startTime).to("US/Pacific")
-
     if transmission.duration is None:
         duration = None
     else:
@@ -46,7 +58,7 @@ def transmissionAsTuple(
         transmission.station,
         transmission.system,
         transmission.channel,
-        startTime.format("ddd MM/DD HH:mm:ss"),
+        dateTimeAsText(transmission.startTime),
         duration,
         str(transmission.path),
         transmission.sha256,
@@ -128,7 +140,7 @@ class TransmissionList(Static):
         station = auto()
         system = auto()
         channel = auto()
-        start = auto()
+        startTime = auto()
         duration = auto()
         path = auto()
         sha256 = auto()
@@ -148,7 +160,7 @@ class TransmissionList(Static):
         table.add_column("Station", key=self.Column.station)
         table.add_column("System", key=self.Column.system)
         table.add_column("Channel", key=self.Column.channel)
-        table.add_column("Start", key=self.Column.start)
+        table.add_column("Start", key=self.Column.startTime)
         # table.add_column("Duration", key=self.Column.duration)
         # table.add_column("Path", key=self.Column.path)
         # table.add_column("SHA256", key=self.Column.sha256)
@@ -171,6 +183,11 @@ class TransmissionList(Static):
                 transmission[9],  # transcription
                 key=transmission[0],
             )
+
+        def sortKey(startTime: str) -> str:
+            return dateTimeFromText(startTime)
+
+        table.sort(self.Column.startTime, key=sortKey)
 
 
 class TransmissionDetails(Static):
