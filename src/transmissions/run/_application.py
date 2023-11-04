@@ -4,6 +4,7 @@ from enum import StrEnum, auto
 from typing import Any, ClassVar, cast
 
 from arrow import get as makeArrow
+from rich.markup import escape
 from textual import on
 from textual.app import App, ComposeResult
 from textual.message import Message
@@ -34,17 +35,27 @@ def transmissionKey(transmission: Transmission) -> str:
     )
 
 
-_dateTimeDisplayFormat = "ddd MM/DD HH:mm:ss"
+def optionalEscape(text: str | None) -> str | None:
+    if text is None:
+        return None
+    else:
+        return escape(text)
+
+
+# _dateTimeDisplayFormat = "ddd MM/DD HH:mm:ss"
 
 
 def dateTimeAsText(datetime: DateTime) -> str:
-    arrow = makeArrow(datetime).to("US/Pacific")
-    return arrow.format(_dateTimeDisplayFormat)
+    return str(makeArrow(datetime))
 
 
 def dateTimeFromText(text: str) -> DateTime:
-    arrow = makeArrow(text, _dateTimeDisplayFormat)
-    return arrow.datetime
+    return makeArrow(text).datetime
+
+
+# def dateTimeShort(isoText: str) -> str:
+#     arrow = makeArrow(isoText)
+#     return arrow.format(_dateTimeDisplayFormat)
 
 
 def transmissionAsTuple(
@@ -81,6 +92,8 @@ class Header(Static):
             height: 3;
             dock: top;
             content-align: center middle;
+            color: $text;
+            background: $primary-darken-2;
         }
         """
 
@@ -97,6 +110,8 @@ class Footer(Static):
             height: 1;
             dock: bottom;
             content-align: center middle;
+            color: $text-muted;
+            background: $primary-darken-3;
         }
         """
 
@@ -175,7 +190,9 @@ class TransmissionList(Static):
             zebra_stripes=True,
         )
 
-    def watch_transmissions(self, transmissions: tuple[int]) -> None:
+    def watch_transmissions(
+        self, transmissions: tuple[TransmissionTuple, ...]
+    ) -> None:
         self.updateTransmissions()
 
     def on_mount(self) -> None:
@@ -192,20 +209,32 @@ class TransmissionList(Static):
 
     def updateTransmissions(self) -> None:
         self.log(f"Displaying {len(self.transmissions)} transmissions")
+
         table = self.query_one(DataTable)
         table.clear()
         for transmission in self.transmissions:
+            key: str = escape(transmission[0])
+            eventID: str = escape(transmission[1])
+            station: str = escape(transmission[2])
+            system: str = escape(transmission[3])
+            channel: str = escape(transmission[4])
+            # startTime: DateTime = dateTimeFromText(transmission[5])
+            # duration: float | None = transmission[6]
+            # path: str = escape(transmission[7])
+            # sha256: str | None = optionalEscape(transmission[8])
+            transcription: str | None = optionalEscape(transmission[9])
+
             table.add_row(
-                transmission[1],  # eventID
-                transmission[2],  # station
-                transmission[3],  # system
-                transmission[4],  # channel
+                eventID,
+                station,
+                system,
+                channel,
                 transmission[5],  # startTime
                 # transmission[6],  # duration
-                # transmission[7],  # path
+                # path,
                 # transmission[8],  # sha256
-                transmission[9],  # transcription
-                key=transmission[0],
+                transcription,
+                key=key,
             )
 
         def sortKey(startTime: str) -> Any:
@@ -231,14 +260,69 @@ class TransmissionDetails(Static):
         TransmissionDetails {
             height: 10;
             dock: bottom;
+            border: double $accent;
+            background: $boost;
         }
         """
+
+    BORDER_TITLE = "Transmission Details"
+
+    transmission: reactive[TransmissionTuple | None] = reactive(None)
+    showFileInfo = reactive(False)
+
+    def watch_transmission(self, transmission: str) -> None:
+        self.updateDetails()
+
+    def updateDetails(self) -> None:
+        if self.transmission is None:
+            return
+
+        self.log(f"Display details: {self.transmission}")
+
+        # key: str = self.transmission[0]
+        eventID: str = escape(self.transmission[1])
+        station: str = escape(self.transmission[2])
+        system: str = escape(self.transmission[3])
+        channel: str = escape(self.transmission[4])
+        startTime: str = escape(self.transmission[5])
+        duration: float | None = self.transmission[6]
+        path: str = escape(self.transmission[7])
+        sha256: str | None = optionalEscape(self.transmission[8])
+        transcription: str | None = optionalEscape(self.transmission[9])
+
+        details: list[str] = []
+
+        details.append(
+            f"([b]{eventID}[/b]) Station [b]{station}[/b] "
+            f"on {system} [b]{channel}[/b] "
+            f"at {startTime} ({duration}s)"
+        )
+
+        if self.showFileInfo:
+            details.append(f"SHA {sha256}: {path}")
+
+        details.append("")
+
+        if transcription is None:
+            details.append("[i](transcription not available)[/i]")
+        else:
+            details.append(transcription.strip())
+
+        self.update("\n".join(details))
 
 
 class TransmissionsScreen(Screen):
     """
     Transmissions screen.
     """
+
+    DEFAULT_CSS: ClassVar[
+        str
+    ] = """
+        TransmissionsScreen {
+            background: $background-darken-3;
+        }
+        """
 
     def __init__(self, transmissions: dict[str, Transmission]) -> None:
         self.transmissions = transmissions
@@ -248,11 +332,10 @@ class TransmissionsScreen(Screen):
         transmissionList = cast(
             TransmissionList, self.query_one("TransmissionList")
         )
-        transmissions = tuple(
+        transmissionList.transmissions = tuple(
             transmissionAsTuple(key, transmission)
             for key, transmission in self.transmissions.items()
         )
-        transmissionList.transmissions = transmissions
 
     def compose(self) -> ComposeResult:
         yield Header("Radio Transmissions", id="Header")
@@ -270,6 +353,14 @@ class TransmissionsScreen(Screen):
         transmission = self.transmissions[message.key]
         self.log(f"Transmission selected: {transmission}")
 
+        # Pass down to details view
+        transmissionDetails = cast(
+            TransmissionDetails, self.query_one("TransmissionDetails")
+        )
+        transmissionDetails.transmission = transmissionAsTuple(
+            message.key, transmission
+        )
+
 
 class TransmissionsApp(App):
     """
@@ -279,7 +370,10 @@ class TransmissionsApp(App):
     TITLE = "Transmissions"
     SUB_TITLE = ""
 
-    BINDINGS = [("q", "quit", "Quit application")]
+    BINDINGS = [
+        ("d", "dark", "Toggle dark mode"),
+        ("q", "quit", "Quit application"),
+    ]
 
     def __init__(self, transmissions: Iterable[Transmission]) -> None:
         self.transmissions = {
@@ -293,3 +387,6 @@ class TransmissionsApp(App):
 
     async def action_quit(self) -> None:
         self.exit()
+
+    async def action_dark(self) -> None:
+        self.dark = not self.dark
