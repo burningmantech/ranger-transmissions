@@ -5,6 +5,7 @@ from typing import Any, ClassVar, cast
 
 from arrow import get as makeArrow
 from rich.markup import escape
+from rich.text import Text
 from textual import on
 from textual.app import App, ComposeResult
 from textual.message import Message
@@ -42,20 +43,12 @@ def optionalEscape(text: str | None) -> str | None:
         return escape(text)
 
 
-# _dateTimeDisplayFormat = "ddd MM/DD HH:mm:ss"
-
-
 def dateTimeAsText(datetime: DateTime) -> str:
     return str(makeArrow(datetime))
 
 
 def dateTimeFromText(text: str) -> DateTime:
     return makeArrow(text).datetime
-
-
-# def dateTimeShort(isoText: str) -> str:
-#     arrow = makeArrow(isoText)
-#     return arrow.format(_dateTimeDisplayFormat)
 
 
 def transmissionAsTuple(
@@ -183,6 +176,23 @@ class TransmissionList(Static):
             return self._control
 
     transmissions: reactive[tuple[TransmissionTuple, ...]] = reactive(())
+    dateTimeDisplayFormat = reactive("ddd YY/MM/DD HH:mm:ss")
+    timeZone = reactive("US/Pacific")
+    displayColumns = reactive(
+        frozenset(
+            (
+                Column.event,
+                Column.station,
+                Column.system,
+                Column.channel,
+                Column.startTime,
+                Column.duration,
+                # Column.path,
+                # Column.sha256,
+                Column.transcription,
+            )
+        )
+    )
 
     def compose(self) -> ComposeResult:
         yield DataTable(
@@ -190,22 +200,35 @@ class TransmissionList(Static):
             zebra_stripes=True,
         )
 
-    def watch_transmissions(
-        self, transmissions: tuple[TransmissionTuple, ...]
-    ) -> None:
-        self.updateTransmissions()
-
     def on_mount(self) -> None:
+        headerNames = {
+            self.Column.event: "Event",
+            self.Column.station: "Station",
+            self.Column.system: "System",
+            self.Column.channel: "Channel",
+            self.Column.startTime: "Start",
+            self.Column.duration: "Duration",
+            self.Column.path: "Path",
+            self.Column.sha256: "SHA256",
+            self.Column.transcription: "Transcription",
+        }
+
         table = self.query_one(DataTable)
-        table.add_column("Event", key=self.Column.event)
-        table.add_column("Station", key=self.Column.station)
-        table.add_column("System", key=self.Column.system)
-        table.add_column("Channel", key=self.Column.channel)
-        table.add_column("Start", key=self.Column.startTime)
-        # table.add_column("Duration", key=self.Column.duration)
-        # table.add_column("Path", key=self.Column.path)
-        # table.add_column("SHA256", key=self.Column.sha256)
-        table.add_column("Transcription", key=self.Column.transcription)
+        for column in self.Column:
+            if column in self.displayColumns:
+                table.add_column(headerNames[column], key=column)
+
+    def dateTimeAsDisplayText(self, dateTime: DateTime) -> str:
+        arrow = makeArrow(dateTime).to(self.timeZone)
+        return arrow.format(self.dateTimeDisplayFormat)
+
+    def dateTimeTextAsDisplayText(self, text: str) -> str:
+        dateTime = dateTimeFromText(text)
+        return self.dateTimeAsDisplayText(dateTime)
+
+    def dateTimeFromDisplayText(self, displayText: str) -> DateTime:
+        arrow = makeArrow(displayText, self.dateTimeDisplayFormat)
+        return arrow.datetime
 
     def updateTransmissions(self) -> None:
         self.log(f"Displaying {len(self.transmissions)} transmissions")
@@ -213,34 +236,57 @@ class TransmissionList(Static):
         table = self.query_one(DataTable)
         table.clear()
         for transmission in self.transmissions:
-            key: str = escape(transmission[0])
-            eventID: str = escape(transmission[1])
-            station: str = escape(transmission[2])
-            system: str = escape(transmission[3])
-            channel: str = escape(transmission[4])
-            # startTime: DateTime = dateTimeFromText(transmission[5])
-            # duration: float | None = transmission[6]
-            # path: str = escape(transmission[7])
-            # sha256: str | None = optionalEscape(transmission[8])
-            transcription: str | None = optionalEscape(transmission[9])
+            key: str = transmission[0]
+            eventID: str = transmission[1]
+            station: str = transmission[2]
+            system: str = transmission[3]
+            channel: str = transmission[4]
+            startTime: str = transmission[5]
+            duration: float | None = transmission[6]
+            path = transmission[7]
+            sha256 = optionalEscape(transmission[8])
+            transcription = optionalEscape(transmission[9])
 
-            table.add_row(
-                eventID,
-                station,
-                system,
-                channel,
-                transmission[5],  # startTime
-                # transmission[6],  # duration
-                # path,
-                # transmission[8],  # sha256
-                transcription,
-                key=key,
-            )
+            items: list[str | Text | None] = []
+
+            if self.Column.event in self.displayColumns:
+                items.append(escape(eventID))
+
+            if self.Column.station in self.displayColumns:
+                items.append(escape(station))
+
+            if self.Column.system in self.displayColumns:
+                items.append(escape(system))
+
+            if self.Column.channel in self.displayColumns:
+                items.append(escape(channel))
+
+            if self.Column.startTime in self.displayColumns:
+                items.append(escape(self.dateTimeTextAsDisplayText(startTime)))
+
+            if self.Column.duration in self.displayColumns:
+                items.append(Text(escape(f"{duration}s"), justify="right"))
+
+            if self.Column.path in self.displayColumns:
+                items.append(escape(path))
+
+            if self.Column.sha256 in self.displayColumns:
+                items.append(optionalEscape(sha256))
+
+            if self.Column.transcription in self.displayColumns:
+                items.append(optionalEscape(transcription))
+
+            table.add_row(*items, key=key)
 
         def sortKey(startTime: str) -> Any:
-            return dateTimeFromText(startTime)
+            return self.dateTimeFromDisplayText(startTime)
 
         table.sort(self.Column.startTime, key=sortKey)
+
+    def watch_transmissions(
+        self, transmissions: tuple[TransmissionTuple, ...]
+    ) -> None:
+        self.updateTransmissions()
 
     @on(DataTable.RowSelected)
     def handle_row_selected(self, message: DataTable.RowSelected) -> None:
