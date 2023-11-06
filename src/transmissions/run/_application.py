@@ -154,7 +154,7 @@ class SearchField(Static):
             placeholder=" \N{right-pointing magnifying glass} Search...",
         )
 
-    @on(Input.Changed)
+    @on(Input.Submitted)
     def handle_update(self, message: Input.Changed) -> None:
         query = message.value
         self.post_message(self.QueryUpdated(self, query))
@@ -300,7 +300,6 @@ class TransmissionList(Static):
         def sortKey(startTime: str) -> Any:
             return self.dateTimeFromDisplayText(startTime)
 
-        self.log("Updating table 4")
         table.sort(self.Column.startTime, key=sortKey)
 
     def updateTransmissions(self) -> None:
