@@ -279,7 +279,7 @@ class TransmissionList(Static):
         if not transcription:
             return False
 
-        for term in query.split(" "):
+        for term in query.split():
             if term:
                 term = term.lower()
                 if transcription.lower().find(term) != -1:

@@ -293,7 +293,15 @@ class Indexer:
         self.log.info(
             "Computing duration for {transmission}", transmission=transmission
         )
-        duration = await deferToThread(self._duration, transmission.path)
+        try:
+            duration = await deferToThread(self._duration, transmission.path)
+        except Exception as e:
+            self.log.error(
+                "Unable to compute duration for "
+                "transmission {transmission}: {error}",
+                transmission=transmission,
+                error=e,
+            )
         await store.setTransmissionDuration(
             eventID=transmission.eventID,
             system=transmission.system,
@@ -328,9 +336,16 @@ class Indexer:
             "Computing transcription for {transmission}",
             transmission=transmission,
         )
-        transcription = await deferToThread(
-            self._transcription, transmission.path
-        )
+        try:
+            transcription = await deferToThread(
+                self._transcription, transmission.path
+            )
+        except Exception as e:
+            self.log.error(
+                "Unable to transcribe transmission {transmission}: {error}",
+                transmission=transmission,
+                error=e,
+            )
         await store.setTransmissionTranscription(
             eventID=transmission.eventID,
             system=transmission.system,
