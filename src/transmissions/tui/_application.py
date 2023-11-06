@@ -526,7 +526,7 @@ class TransmissionsScreen(Screen):
         transmissionList.searchQuery = message.query
 
 
-class TransmissionsApp(App):
+class Application(App):
     """
     Transmissions application.
     """

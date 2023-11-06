@@ -28,8 +28,8 @@ from transmissions.ext.logger import startLogging
 from transmissions.indexer import Indexer
 from transmissions.model import Event, Transmission
 from transmissions.store import TXDataStore
+from transmissions.tui import Application as TUIApplication
 
-from ._application import TransmissionsApp
 from ._store import StoreFactory, storeFactoryFromConfig
 
 
@@ -275,7 +275,7 @@ def application(ctx: Context) -> None:
     """
 
     async def app(store: TXDataStore) -> None:
-        app = TransmissionsApp(await store.transmissions())
+        app = TUIApplication(await store.transmissions())
         app.run()
 
     run(ctx, app, reactor=asyncioReactor)

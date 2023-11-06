@@ -33,7 +33,7 @@ Once you have the above installed, you can install this package using ``pipx``:
 
 .. code-block:: console
 
-    pipx install --python=python3.11 git+ssh://git@github.com/burningmantech/ranger-transmissions.git
+    pipx install git+https://github.com/burningmantech/ranger-transmissions.git
 
 You should now have a command called ``rtx`` in your system.
 
