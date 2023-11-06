@@ -261,16 +261,16 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: "Upload coverage to Codecov"
-        uses: "codecov/codecov-action@v3.1.1"
-        if: ${{ matrix.tox-prefix == 'coverage' }}
-        with:
-          files: .tox/coverage.xml
-          env_vars: GITHUB_REF,GITHUB_COMMIT,GITHUB_USER,GITHUB_WORKFLOW
-          fail_ci_if_error: true
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-          GITHUB_REF: ${{ github.ref }}
-          GITHUB_COMMIT: ${{ github.sha }}
-          GITHUB_USER: ${{ github.actor }}
-          GITHUB_WORKFLOW: ${{ github.workflow }}
+      # - name: "Upload coverage to Codecov"
+      #   uses: "codecov/codecov-action@v3.1.1"
+      #   if: ${{ matrix.tox-prefix == 'coverage' }}
+      #   with:
+      #     files: .tox/coverage.xml
+      #     env_vars: GITHUB_REF,GITHUB_COMMIT,GITHUB_USER,GITHUB_WORKFLOW
+      #     fail_ci_if_error: true
+      #   env:
+      #     CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      #     GITHUB_REF: ${{ github.ref }}
+      #     GITHUB_COMMIT: ${{ github.sha }}
+      #     GITHUB_USER: ${{ github.actor }}
+      #     GITHUB_WORKFLOW: ${{ github.workflow }}
