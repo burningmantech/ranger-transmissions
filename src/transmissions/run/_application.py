@@ -269,6 +269,27 @@ class TransmissionList(Static):
         arrow = makeArrow(displayText, self.dateTimeDisplayFormat)
         return arrow.datetime
 
+    def filterTable(self, row: TransmissionTableRowItems, key: str) -> bool:
+        query = self.searchQuery
+        if not query:
+            return True
+
+        transcription = row[8]
+
+        if not transcription:
+            return False
+
+        for term in query.split(" "):
+            if term:
+                term = term.lower()
+                if transcription.lower().find(term) != -1:
+                    continue
+            break
+        else:
+            return True
+
+        return False
+
     def updateTable(self) -> None:
         self.log("Updating table")
         columns = []
@@ -295,7 +316,8 @@ class TransmissionList(Static):
         table = self.query_one(DataTable)
         table.clear()
         for row, key in self._tableData:
-            table.add_row(*[row[column] for column in columns], key=key)
+            if self.filterTable(row, key):
+                table.add_row(*[row[column] for column in columns], key=key)
 
         def sortKey(startTime: str) -> Any:
             return self.dateTimeFromDisplayText(startTime)
