@@ -27,10 +27,10 @@ def storeFactoryFromConfig(configuration: dict[str, Any]) -> StoreFactory:
 def sqliteStoreFactoryFromConfig(storeConfig: dict[str, Any]) -> StoreFactory:
     from transmissions.store.sqlite import DataStore
 
-    fileName = storeConfig.get("File", "./rtx.sqlite")
+    fileName = storeConfig.get("File", "~/rtx.sqlite")
 
     async def factory() -> TXDataStore:
-        store = DataStore(dbPath=Path(fileName))
+        store = DataStore(dbPath=Path(fileName).expanduser())
         await store.upgradeSchema()
         return store
 

@@ -302,6 +302,8 @@ class Indexer:
                 transmission=transmission,
                 error=e,
             )
+            return
+
         await store.setTransmissionDuration(
             eventID=transmission.eventID,
             system=transmission.system,
@@ -346,6 +348,8 @@ class Indexer:
                 transmission=transmission,
                 error=e,
             )
+            return
+
         await store.setTransmissionTranscription(
             eventID=transmission.eventID,
             system=transmission.system,

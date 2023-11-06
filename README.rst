@@ -38,8 +38,21 @@ Once you have the above installed, you can install this package using ``pipx``:
 You should now have a command called ``rtx`` in your system.
 
 
+Usage
+-----
+
+``rtx`` provides a command line application that lets you browse though indexed audio content.
+If you have an existing data file containing an index, put that at ``~/rtx.sqlite``.
+Then start the application:
+
+.. code-block:: console
+
+    rtx application
+
+
 .. _Homebrew: https://brew.sh
 .. _ffmpeg: https://ffmpeg.org
 .. _openai-whisper: https://github.com/openai/whisper
 .. _Python 3.11: https://www.python.org/downloads/release/python-3116/
+.. _pipx: https://pypa.github.io/pipx/
 .. _pydub: https://github.com/jiaaro/pydub/

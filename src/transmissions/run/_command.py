@@ -36,9 +36,6 @@ from ._store import StoreFactory, storeFactoryFromConfig
 __all__ = ()
 
 
-defaultConfigPath = Path("~/rtx.toml")
-
-
 @frozen(kw_only=True)
 class Command:
     """
