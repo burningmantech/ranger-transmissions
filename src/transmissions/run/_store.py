@@ -27,7 +27,7 @@ def storeFactoryFromConfig(configuration: dict[str, Any]) -> StoreFactory:
 def sqliteStoreFactoryFromConfig(storeConfig: dict[str, Any]) -> StoreFactory:
     from transmissions.store.sqlite import DataStore
 
-    fileName = storeConfig.get("File", "./rtx.toml")
+    fileName = storeConfig.get("File", "./rtx.sqlite")
 
     async def factory() -> TXDataStore:
         store = DataStore(dbPath=Path(fileName))

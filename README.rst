@@ -10,19 +10,36 @@ Ranger Radio Transmission Indexer
 
 This software package contains functionality for processing audio from Burning Man's radio system.
 
+
 Installation
 ------------
 
-This package uses the `pydub`_ and `openai-whisper`_ Python packages, each of which has specific setup requirements.
-See the instructions for each package for details.
-In particular, both require ``ffmpeg``.
+To install this package, you will need to install `Python 3.11`_.
+You should also install the `pipx`_ tool, which provides an easy way to install python executables.
 
-On macOS using Homebrew, you can use the following command:
+Additionally, this package uses the `pydub`_ and the `openai-whisper`_ Python packages, each of which has specific setup requirements.
+See the instructions for each package for details.
+In particular, both require `ffmpeg`_.
+
+On macOS using `Homebrew`_, you can install what you need thusly:
 
 .. code-block:: console
 
-   brew install ffmpeg
+    brew install python@3.11
+    brew install pipx
+    brew install ffmpeg
+
+Once you have the above installed, you can install this package using ``pipx``:
+
+.. code-block:: console
+
+    pipx install --python=python3.11 git+ssh://git@github.com/burningmantech/ranger-transmissions.git
+
+You should now have a command called ``rtx`` in your system.
 
 
+.. _Homebrew: https://brew.sh
+.. _ffmpeg: https://ffmpeg.org
+.. _openai-whisper: https://github.com/openai/whisper
+.. _Python 3.11: https://www.python.org/downloads/release/python-3116/
 .. _pydub: https://github.com/jiaaro/pydub/
-.. _whisper: https://github.com/openai/whisper
