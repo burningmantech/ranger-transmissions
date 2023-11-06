@@ -379,8 +379,22 @@ class Indexer:
             await store.createTransmission(transmission)
         else:
             # FIXME: If these don't match, we could clean up the DB
-            assert transmission.station == existingTransmission.station
-            assert transmission.path == existingTransmission.path
+            if transmission.station != existingTransmission.station:
+                self.log.error(
+                    "Duplicate transmissions with different "
+                    "stations {station1} and {station2}",
+                    station1=existingTransmission.station,
+                    station2=transmission.station,
+                )
+                return
+            if transmission.path != existingTransmission.path:
+                self.log.error(
+                    "Duplicate transmissions with different "
+                    "file paths {path1} and {path2}",
+                    path1=existingTransmission.path,
+                    path2=transmission.path,
+                )
+                return
             transmission = existingTransmission
 
         if computeChecksum and transmission.sha256 is None:
