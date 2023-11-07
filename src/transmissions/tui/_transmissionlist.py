@@ -18,7 +18,7 @@ from ._util import TransmissionTuple, dateTimeFromText
 __all__ = ()
 
 
-TransmissionTableRowItems = tuple[
+TransmissionTableRowCells = tuple[
     str,  # event
     str,  # station
     str,  # system
@@ -29,7 +29,7 @@ TransmissionTableRowItems = tuple[
     str | Text,  # sha256
     str,  # transcription
 ]
-TransmissionTableRowData = tuple[TransmissionTableRowItems, str]
+TransmissionTableRowData = tuple[TransmissionTableRowCells, str]
 TransmissionTableData = tuple[TransmissionTableRowData, ...]
 
 
@@ -127,7 +127,7 @@ class TransmissionList(Static):
         arrow = makeArrow(displayText, self.dateTimeDisplayFormat)
         return arrow.datetime
 
-    def filterTable(self, row: TransmissionTableRowItems, key: str) -> bool:
+    def filterTable(self, row: TransmissionTableRowCells, key: str) -> bool:
         query = self.searchQuery
         if not query:
             return True
@@ -199,31 +199,31 @@ class TransmissionList(Static):
             transcription = transmission[9]
 
             if duration is None:
-                durationItem = Text("-", justify="center")
+                durationCell = Text("-", justify="center")
             else:
-                durationItem = Text(escape(f"{duration}s"), justify="right")
+                durationCell = Text(escape(f"{duration}s"), justify="right")
 
             if sha256 is None:
-                sha256Item: str | Text = Text("-", justify="center")
+                sha256Cell: str | Text = Text("-", justify="center")
             else:
-                sha256Item = escape(sha256)
+                sha256Cell = escape(sha256)
 
             if transcription is None:
                 transcription = "…"
 
-            items: TransmissionTableRowItems = (
+            cells: TransmissionTableRowCells = (
                 escape(eventID),
                 escape(station),
                 escape(system),
                 escape(channel),
                 escape(self.dateTimeTextAsDisplayText(startTime)),
-                durationItem,
+                durationCell,
                 escape(path),
-                sha256Item,
+                sha256Cell,
                 escape(transcription),
             )
 
-            rowData: TransmissionTableRowData = (items, key)
+            rowData: TransmissionTableRowData = (cells, key)
             tableData.append(rowData)
 
         self._tableData = tuple(tableData)
