@@ -24,27 +24,27 @@ from datetime import datetime as DateTime
 from datetime import timedelta as TimeDelta
 from pathlib import Path
 
-from attrs import frozen
+from attrs import field, frozen
 
 
 __all__ = ()
 
 
-@frozen(kw_only=True)
+@frozen(kw_only=True, order=True)
 class Transmission:
     """
     Radio transmission
     """
 
+    startTime: DateTime
     eventID: str
     station: str
     system: str
     channel: str
-    startTime: DateTime
-    duration: TimeDelta | None
+    duration: TimeDelta | None = field(order=False)
     path: Path
-    sha256: str | None
-    transcription: str | None
+    sha256: str | None = field(order=False)
+    transcription: str | None = field(order=False)
 
     @property
     def endTime(self) -> DateTime | None:
