@@ -12,7 +12,7 @@ from textual.reactive import reactive
 from textual.widget import Widget
 from textual.widgets import DataTable, Static
 
-from ._util import TransmissionTuple, dateTimeFromText, optionalEscape
+from ._util import TransmissionTuple, dateTimeFromText
 
 
 __all__ = ()
@@ -24,10 +24,10 @@ TransmissionTableRowItems = tuple[
     str,  # system
     str,  # channel
     str,  # startTime -> text
-    Text | None,  # duration -> rich text
+    str | Text,  # duration -> rich text
     str,  # path
-    str | None,  # sha256
-    str | None,  # transcription
+    str | Text,  # sha256
+    str,  # transcription
 ]
 TransmissionTableRowData = tuple[TransmissionTableRowItems, str]
 TransmissionTableData = tuple[TransmissionTableRowData, ...]
@@ -199,9 +199,17 @@ class TransmissionList(Static):
             transcription = transmission[9]
 
             if duration is None:
-                durationItem = None
+                durationItem = Text("-", justify="center")
             else:
                 durationItem = Text(escape(f"{duration}s"), justify="right")
+
+            if sha256 is None:
+                sha256Item: str | Text = Text("-", justify="center")
+            else:
+                sha256Item = escape(sha256)
+
+            if transcription is None:
+                transcription = "…"
 
             items: TransmissionTableRowItems = (
                 escape(eventID),
@@ -211,8 +219,8 @@ class TransmissionList(Static):
                 escape(self.dateTimeTextAsDisplayText(startTime)),
                 durationItem,
                 escape(path),
-                optionalEscape(sha256),
-                optionalEscape(transcription),
+                sha256Item,
+                escape(transcription),
             )
 
             rowData: TransmissionTableRowData = (items, key)

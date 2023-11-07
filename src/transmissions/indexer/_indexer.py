@@ -368,7 +368,7 @@ class Indexer:
         computeTranscription: bool,
         computeDuration: bool,
     ) -> None:
-        self.log.info("Ensuring {transmission}", transmission=transmission)
+        self.log.debug("Ensuring {transmission}", transmission=transmission)
         existingTransmission = await store.transmission(
             eventID=transmission.eventID,
             system=transmission.system,
