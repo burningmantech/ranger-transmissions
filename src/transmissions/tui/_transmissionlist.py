@@ -1,6 +1,5 @@
 from datetime import datetime as DateTime
 from enum import StrEnum, auto
-from typing import Any
 
 from arrow import get as makeArrow
 from rich.markup import escape
@@ -177,10 +176,10 @@ class TransmissionList(Static):
             if self.filterTable(row, key):
                 table.add_row(*[row[column] for column in columns], key=key)
 
-        def sortKey(startTime: str) -> Any:
-            return self.dateTimeFromDisplayText(startTime)
+        # def sortKey(startTime: str) -> Any:
+        #     return self.dateTimeFromDisplayText(startTime)
 
-        table.sort(self.Column.startTime, key=sortKey)
+        # table.sort(self.Column.startTime, key=sortKey)
 
     def updateTransmissions(self) -> None:
         self.log(f"Updating {len(self.transmissions)} transmissions")

@@ -10,17 +10,6 @@ from ._transmissionsscreen import TransmissionsScreen
 __all__ = ()
 
 
-def transmissionKey(transmission: Transmission) -> str:
-    return ":".join(
-        (
-            transmission.eventID,
-            transmission.system,
-            transmission.channel,
-            str(transmission.startTime),
-        )
-    )
-
-
 class Application(App):
     """
     Transmissions application.
@@ -35,10 +24,7 @@ class Application(App):
     ]
 
     def __init__(self, transmissions: Iterable[Transmission]) -> None:
-        self.transmissions = {
-            transmissionKey(transmission): transmission
-            for transmission in transmissions
-        }
+        self.transmissions = tuple(sorted(transmissions))
         super().__init__()
 
     def on_mount(self) -> None:

@@ -18,6 +18,17 @@ from ._util import TransmissionTuple, dateTimeAsText
 __all__ = ()
 
 
+def transmissionKey(transmission: Transmission) -> str:
+    return ":".join(
+        (
+            transmission.eventID,
+            transmission.system,
+            transmission.channel,
+            str(transmission.startTime),
+        )
+    )
+
+
 def transmissionAsTuple(
     key: str, transmission: Transmission
 ) -> TransmissionTuple:
@@ -53,8 +64,12 @@ class TransmissionsScreen(Screen):
         }
         """
 
-    def __init__(self, transmissions: dict[str, Transmission]) -> None:
-        self.transmissions = transmissions
+    def __init__(self, transmissions: tuple[Transmission, ...]) -> None:
+        self.transmissionsByKey = {
+            transmissionKey(transmission): transmission
+            for transmission in transmissions
+        }
+
         super().__init__()
 
     async def on_mount(self) -> None:
@@ -63,7 +78,7 @@ class TransmissionsScreen(Screen):
         )
         transmissionList.transmissions = tuple(
             transmissionAsTuple(key, transmission)
-            for key, transmission in self.transmissions.items()
+            for key, transmission in self.transmissionsByKey.items()
         )
 
     def compose(self) -> ComposeResult:
@@ -79,7 +94,7 @@ class TransmissionsScreen(Screen):
     def handleTransmissionSelected(
         self, message: TransmissionList.TransmissionSelected
     ) -> None:
-        transmission = self.transmissions[message.key]
+        transmission = self.transmissionsByKey[message.key]
         self.log(f"Transmission selected: {transmission}")
 
         # Pass down to details view
