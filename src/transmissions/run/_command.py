@@ -27,6 +27,7 @@ from transmissions.ext.click import readConfig
 from transmissions.ext.logger import startLogging
 from transmissions.indexer import Indexer
 from transmissions.model import Event, Transmission
+from transmissions.search import TransmissionsIndex
 from transmissions.store import TXDataStore
 from transmissions.tui import Application as TUIApplication
 
@@ -74,35 +75,6 @@ def groupClassWithConfigParam(param: str) -> type[Group]:
 
 
 defaultConfigPath = Path("~/.rtx.toml")
-
-
-@group(cls=groupClassWithConfigParam("config"))
-@version_option()
-@option(
-    "--config",
-    help=f"Set path to configuration file. (default: {defaultConfigPath})",
-    type=str,
-    metavar="<path>",
-    prompt=False,
-    required=False,
-    default=defaultConfigPath,
-)
-@pass_context
-def main(ctx: Context, config: str) -> None:
-    """
-    Radio transmission indexing tool.
-    """
-    assert ctx.default_map is not None
-    configuration = ctx.default_map["_config"]
-
-    # if ctx.default_map is None:
-    #     commonDefaults = readConfig(Path(config))
-
-    #     ctx.default_map = {command: commonDefaults for command in ("index",)}
-
-    configuration["storeFactory"] = storeFactoryFromConfig(configuration)
-
-    startLogging()
 
 
 def storeFactoryFromContext(ctx: Context) -> StoreFactory:
@@ -225,6 +197,35 @@ def printTransmissions(transmissions: Iterable[Transmission]) -> None:
     console.print(table)
 
 
+@group(cls=groupClassWithConfigParam("config"))
+@version_option()
+@option(
+    "--config",
+    help=f"Set path to configuration file. (default: {defaultConfigPath})",
+    type=str,
+    metavar="<path>",
+    prompt=False,
+    required=False,
+    default=defaultConfigPath,
+)
+@pass_context
+def main(ctx: Context, config: str) -> None:
+    """
+    Radio transmission indexing tool.
+    """
+    assert ctx.default_map is not None
+    configuration = ctx.default_map["_config"]
+
+    # if ctx.default_map is None:
+    #     commonDefaults = readConfig(Path(config))
+
+    #     ctx.default_map = {command: commonDefaults for command in ("index",)}
+
+    configuration["storeFactory"] = storeFactoryFromConfig(configuration)
+
+    startLogging()
+
+
 @main.command()
 @pass_context
 def index(ctx: Context) -> None:
@@ -255,14 +256,42 @@ def events(ctx: Context) -> None:
 
 
 @main.command()
+@option(
+    "--search",
+    help="Filter output with the given serach query.",
+    type=str,
+    metavar="<query>",
+    prompt=False,
+    required=False,
+    default="",
+)
 @pass_context
-def transmissions(ctx: Context) -> None:
+def transmissions(ctx: Context, search: str) -> None:
     """
     List transmissions.
     """
 
     async def app(store: TXDataStore) -> None:
-        printTransmissions(await store.transmissions())
+        transmissionsByKey = {t.key: t for t in await store.transmissions()}
+
+        if search:
+            results = set()
+            index = TransmissionsIndex()
+            await index.connect()
+            await index.add(transmissionsByKey.values())
+            async for result in index.search(search):
+                key = (
+                    result["eventID"],
+                    result["system"],
+                    result["channel"],
+                    result["startTime"],
+                )
+                results.add(transmissionsByKey[key])
+            transmissions: Iterable[Transmission] = results
+        else:
+            transmissions = transmissionsByKey.values()
+
+        printTransmissions(sorted(transmissions))
 
     run(ctx, app)
 

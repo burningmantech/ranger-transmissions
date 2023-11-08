@@ -6,3 +6,4 @@ pydub==0.25.1
 rich==13.6.0
 textual==0.41.0
 Twisted==22.10.0
+Whoosh==2.7.4

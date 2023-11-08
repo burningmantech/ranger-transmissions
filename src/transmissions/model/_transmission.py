@@ -52,6 +52,10 @@ class Transmission:
             return None
         return self.startTime + self.duration
 
+    @property
+    def key(self) -> tuple[str, str, str, DateTime]:
+        return (self.eventID, self.system, self.channel, self.startTime)
+
     def __str__(self) -> str:
         return (
             f"{self.startTime} ({self.duration})"
