@@ -40,11 +40,37 @@ Usage
 
 ``rtx`` provides a command line application that lets you browse though indexed audio content.
 If you have an existing data file containing an index, put that at ``~/rtx.sqlite``.
-Then start the application:
+Then start the interactive application:
 
 .. code-block:: console
 
     rtx application
+
+If you simply want a report of the indexed content, you can get that directly:
+
+.. code-block:: console
+
+    # All transmissions
+    rtx transmissions
+
+    # Search
+    rtx transmissions --search="ranger"
+
+To generate your an index of audio files (warning: this takes a very long time), first create a file ``~/.rtx.toml`` which describes where to find the audio content:
+
+.. code-block:: console
+
+    [Audio.Event.2023]
+
+    Name = "Burning Man 2023"
+
+    SourceDirectory = "~/Google Drive/Shared drives/2023 Radio System Archive"
+
+Then run the indexer:
+
+.. code-block:: console
+
+    rtx index
 
 
 .. _Homebrew: https://brew.sh
