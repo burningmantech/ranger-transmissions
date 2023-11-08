@@ -1,6 +1,6 @@
 from collections.abc import AsyncIterable, Iterable
 from enum import Enum, auto
-from typing import Any, ClassVar
+from typing import ClassVar
 
 from attrs import mutable
 from whoosh.fields import DATETIME, ID, NUMERIC, TEXT, Schema
@@ -91,7 +91,7 @@ class TransmissionsIndex:
         # way to await on completion of the indexing thread here.
         writer.commit(mergetype=CLEAR)
 
-    async def search(self, queryText: str) -> AsyncIterable[dict[str, Any]]:
+    async def search(self, queryText: str) -> AsyncIterable[Transmission.Key]:
         """
         Perform search.
         """
@@ -102,4 +102,10 @@ class TransmissionsIndex:
 
         with self._index.searcher() as searcher:
             for result in searcher.search(query, limit=None):
-                yield result.fields()
+                result.fields()
+                yield (
+                    result["eventID"],
+                    result["system"],
+                    result["channel"],
+                    result["startTime"],
+                )

@@ -275,19 +275,12 @@ def transmissions(ctx: Context, search: str) -> None:
         transmissionsByKey = {t.key: t for t in await store.transmissions()}
 
         if search:
-            results = set()
             index = TransmissionsIndex()
             await index.connect()
             await index.add(transmissionsByKey.values())
-            async for result in index.search(search):
-                key = (
-                    result["eventID"],
-                    result["system"],
-                    result["channel"],
-                    result["startTime"],
-                )
-                results.add(transmissionsByKey[key])
-            transmissions: Iterable[Transmission] = results
+            transmissions: Iterable[Transmission] = [
+                transmissionsByKey[key] async for key in index.search(search)
+            ]
         else:
             transmissions = transmissionsByKey.values()
 

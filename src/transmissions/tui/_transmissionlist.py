@@ -85,6 +85,7 @@ class TransmissionList(Static):
     dateTimeDisplayFormat = reactive("ddd YY/MM/DD HH:mm:ss")
     timeZone = reactive("US/Pacific")
     searchQuery = reactive("")
+    displayKeys: reactive[frozenset[str] | None] = reactive(None)
 
     def __init__(self, id: str) -> None:
         self._tableData: TransmissionTableData = ()
@@ -126,27 +127,6 @@ class TransmissionList(Static):
         arrow = makeArrow(displayText, self.dateTimeDisplayFormat)
         return arrow.datetime
 
-    def filterTable(self, row: TransmissionTableRowCells, key: str) -> bool:
-        query = self.searchQuery
-        if not query:
-            return True
-
-        transcription = row[8]
-
-        if not transcription:
-            return False
-
-        for term in query.split():
-            if term:
-                term = term.lower()
-                if transcription.lower().find(term) != -1:
-                    continue
-            break
-        else:
-            return True
-
-        return False
-
     def updateTable(self) -> None:
         self.log("Updating table")
         columns = []
@@ -173,7 +153,7 @@ class TransmissionList(Static):
         table = self.query_one(DataTable)
         table.clear()
         for row, key in self._tableData:
-            if self.filterTable(row, key):
+            if self.displayKeys is None or key in self.displayKeys:
                 table.add_row(*[row[column] for column in columns], key=key)
 
         # def sortKey(startTime: str) -> Any:
@@ -237,8 +217,8 @@ class TransmissionList(Static):
         except Exception as e:
             self.log(f"Unable to update transmissions: {e}")
 
-    def watch_searchQuery(self, searchQuery: str) -> None:
-        self.log(f"Received search query: {searchQuery}")
+    def watch_displayKeys(self, displayKeys: frozenset[str]) -> None:
+        self.log(f"Received display keys: {displayKeys}")
         try:
             self.updateTable()
         except Exception as e:

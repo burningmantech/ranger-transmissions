@@ -23,6 +23,7 @@ Radio transmission
 from datetime import datetime as DateTime
 from datetime import timedelta as TimeDelta
 from pathlib import Path
+from typing import ClassVar, TypeAlias
 
 from attrs import field, frozen
 
@@ -30,11 +31,16 @@ from attrs import field, frozen
 __all__ = ()
 
 
+KeyType = TypeAlias
+
+
 @frozen(kw_only=True, order=True)
 class Transmission:
     """
     Radio transmission
     """
+
+    Key: ClassVar[TypeAlias] = KeyType
 
     startTime: DateTime
     eventID: str
@@ -53,7 +59,7 @@ class Transmission:
         return self.startTime + self.duration
 
     @property
-    def key(self) -> tuple[str, str, str, DateTime]:
+    def key(self) -> Key:
         return (self.eventID, self.system, self.channel, self.startTime)
 
     def __str__(self) -> str:

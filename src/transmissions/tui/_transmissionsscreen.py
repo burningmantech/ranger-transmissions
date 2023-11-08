@@ -5,6 +5,7 @@ from textual.app import ComposeResult
 from textual.screen import Screen
 
 from transmissions.model import Transmission
+from transmissions.search import TransmissionsIndex
 
 from ._body import Body
 from ._footer import Footer
@@ -18,15 +19,8 @@ from ._util import TransmissionTuple, dateTimeAsText
 __all__ = ()
 
 
-def transmissionKey(transmission: Transmission) -> str:
-    return ":".join(
-        (
-            transmission.eventID,
-            transmission.system,
-            transmission.channel,
-            str(transmission.startTime),
-        )
-    )
+def transmissionTableKey(key: Transmission.Key) -> str:
+    return ":".join(str(i) for i in key)
 
 
 def transmissionAsTuple(
@@ -66,7 +60,7 @@ class TransmissionsScreen(Screen):
 
     def __init__(self, transmissions: tuple[Transmission, ...]) -> None:
         self.transmissionsByKey = {
-            transmissionKey(transmission): transmission
+            transmissionTableKey(transmission.key): transmission
             for transmission in transmissions
         }
 
@@ -80,6 +74,14 @@ class TransmissionsScreen(Screen):
             transmissionAsTuple(key, transmission)
             for key, transmission in self.transmissionsByKey.items()
         )
+
+        try:
+            transmissionsIndex = TransmissionsIndex()
+            await transmissionsIndex.connect()
+            await transmissionsIndex.add(self.transmissionsByKey.values())
+            self._transcriptionsIndex = transmissionsIndex
+        except Exception as e:
+            self.log(f"Unable to index transmissions: {e}")
 
     def compose(self) -> ComposeResult:
         yield Header("Radio Transmissions", id="Header")
@@ -106,11 +108,31 @@ class TransmissionsScreen(Screen):
         )
 
     @on(SearchField.QueryUpdated)
-    def handleSearchQueryUpdated(
+    async def handleSearchQueryUpdated(
         self, message: SearchField.QueryUpdated
     ) -> None:
         self.log(f"Search query: {message.query}")
+
+        searchQuery = message.query.strip()
+
         transmissionList = cast(
             TransmissionList, self.query_one("TransmissionList")
         )
-        transmissionList.searchQuery = message.query
+        transmissionList.searchQuery = searchQuery
+
+        if searchQuery:
+            try:
+                keys = frozenset(
+                    {
+                        transmissionTableKey(result)
+                        async for result in self._transcriptionsIndex.search(
+                            message.query
+                        )
+                    }
+                )
+                self.log(f"{keys}")
+                transmissionList.displayKeys = keys
+            except Exception as e:
+                self.log(f"Unable to perform search: {e}")
+        else:
+            transmissionList.displayKeys = None
