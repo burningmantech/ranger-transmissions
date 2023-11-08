@@ -34,6 +34,12 @@ Once you have the above installed, you can install this package using ``pipx``:
 
 You should now have a command called ``rtx`` in your system.
 
+To update to the latest version:
+
+.. code-block:: console
+
+    pipx reinstall ranger-transmissions
+
 
 Usage
 -----
