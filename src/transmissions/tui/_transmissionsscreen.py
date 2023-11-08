@@ -7,6 +7,7 @@ from textual.screen import Screen
 from transmissions.model import Transmission
 from transmissions.search import TransmissionsIndex
 
+from ._body import Body
 from ._footer import Footer
 from ._header import Header
 from ._searchfield import SearchField
@@ -54,8 +55,6 @@ class TransmissionsScreen(Screen):
     ] = """
         TransmissionsScreen {
             background: $background-darken-3;
-            width: 1fr;
-            height: 1fr;
         }
         """
 
@@ -91,9 +90,7 @@ class TransmissionsScreen(Screen):
             " - Audio and displayed content is confidential and proprietary",
             id="Footer",
         )
-        yield SearchField()
-        yield TransmissionList(id="TransmissionList")
-        yield TransmissionDetails(id="TransmissionDetails")
+        yield Body(id="Body")
 
     @on(TransmissionList.TransmissionSelected)
     def handleTransmissionSelected(
