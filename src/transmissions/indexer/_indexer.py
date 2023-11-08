@@ -279,7 +279,7 @@ class Indexer:
             )
             for filename in filenames:
                 path = Path(dirpath) / filename
-                self.log.info("Found audio file: {path}", path=path)
+                self.log.debug("Found audio file: {path}", path=path)
                 try:
                     yield self._transmissionFromFile(path)
                 except InvalidFileError as e:
