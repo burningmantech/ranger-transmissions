@@ -32,7 +32,7 @@ class TransmissionDetails(Static):
     BORDER_TITLE = "Transmission Details"
 
     transmission: reactive[TransmissionTuple | None] = reactive(None)
-    showFileInfo = reactive(False)
+    showFileInfo = reactive(True)
     dateTimeDisplayFormat = reactive("[on] ddd YY/MM/DD [at] HH:mm:ss")
     timeZone = reactive("US/Pacific")
 

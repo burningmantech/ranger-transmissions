@@ -395,6 +395,7 @@ class Indexer:
                     path2=transmission.path,
                 )
                 return
+
             transmission = existingTransmission
 
         if computeChecksum and transmission.sha256 is None:
