@@ -26,6 +26,7 @@ from pathlib import Path
 from typing import ClassVar, TypeAlias
 
 from attrs import field, frozen
+from attrs.validators import instance_of, optional
 
 
 __all__ = ()
@@ -42,50 +43,26 @@ class Transmission:
 
     Key: ClassVar[TypeAlias] = KeyType
 
-    startTime: DateTime = field()
-    eventID: str = field()
-    station: str = field()
-    system: str = field()
-    channel: str = field()
-    duration: TimeDelta | None = field(order=False)
-    path: Path = field()
-    sha256: str | None = field(order=False)
-    transcription: str | None = field(order=False)
-
-    @startTime.validator
-    def _check_startTime(self, attribute: object, value: object) -> None:
-        if not isinstance(value, DateTime):
-            raise TypeError("startTime must be a DateTime")
-
-    @eventID.validator
-    def _check_eventID(self, attribute: object, value: object) -> None:
-        if not isinstance(value, str):
-            raise TypeError("eventID must be a str")
-
-    @station.validator
-    def _check_station(self, attribute: object, value: object) -> None:
-        if not isinstance(value, str):
-            raise TypeError("station must be a str")
-
-    @system.validator
-    def _check_system(self, attribute: object, value: object) -> None:
-        if not isinstance(value, str):
-            raise TypeError("system must be a str")
-
-    @channel.validator
-    def _check_channel(self, attribute: object, value: object) -> None:
-        if not isinstance(value, str):
-            raise TypeError("channel must be a str")
+    startTime: DateTime = field(validator=instance_of(DateTime))
+    eventID: str = field(validator=instance_of(str))
+    station: str = field(validator=instance_of(str))
+    system: str = field(validator=instance_of(str))
+    channel: str = field(validator=instance_of(str))
+    duration: TimeDelta | None = field(
+        validator=optional(instance_of(TimeDelta)), order=False
+    )
+    path: Path = field(validator=instance_of(Path))
+    sha256: str | None = field(
+        validator=optional(instance_of(str)), order=False
+    )
+    transcription: str | None = field(
+        validator=optional(instance_of(str)), order=False
+    )
 
     @duration.validator
     def _check_duration(self, attribute: object, value: object) -> None:
         if value is not None and not isinstance(value, TimeDelta):
             raise TypeError("duration must be a TimeDelta or None")
-
-    @path.validator
-    def _check_path(self, attribute: object, value: object) -> None:
-        if not isinstance(value, Path):
-            raise TypeError("path must be a Path")
 
     @sha256.validator
     def _check_sha256(self, attribute: object, value: object) -> None:
