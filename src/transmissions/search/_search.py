@@ -91,7 +91,9 @@ class TransmissionsIndex:
         # way to await on completion of the indexing thread here.
         writer.commit(mergetype=CLEAR)
 
-    async def search(self, queryText: str) -> AsyncIterable[Transmission.Key]:
+    async def search(
+        self, queryText: str, limit: int | None = None
+    ) -> AsyncIterable[Transmission.Key]:
         """
         Perform search.
         """
@@ -101,8 +103,7 @@ class TransmissionsIndex:
         query = parser.parse(queryText)
 
         with self._index.searcher() as searcher:
-            for result in searcher.search(query, limit=None):
-                result.fields()
+            for result in searcher.search(query, limit=limit):
                 yield (
                     result["eventID"],
                     result["system"],
