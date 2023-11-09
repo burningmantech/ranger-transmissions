@@ -59,21 +59,6 @@ class Transmission:
         validator=optional(instance_of(str)), order=False
     )
 
-    @duration.validator
-    def _check_duration(self, attribute: object, value: object) -> None:
-        if value is not None and not isinstance(value, TimeDelta):
-            raise TypeError("duration must be a TimeDelta or None")
-
-    @sha256.validator
-    def _check_sha256(self, attribute: object, value: object) -> None:
-        if value is not None and not isinstance(value, str):
-            raise TypeError("sha256 must be a str or None")
-
-    @transcription.validator
-    def _check_transcription(self, attribute: object, value: object) -> None:
-        if value is not None and not isinstance(value, str):
-            raise TypeError("transcription must be a str or None")
-
     @property
     def endTime(self) -> DateTime | None:
         if self.duration is None:
