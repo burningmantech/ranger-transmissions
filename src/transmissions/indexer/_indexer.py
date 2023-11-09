@@ -411,6 +411,7 @@ class Indexer:
         self,
         store: TXDataStore,
         *,
+        existingOnly: bool = True,
         computeChecksum: bool = True,
         computeTranscription: bool = True,
         computeDuration: bool = True,
@@ -427,28 +428,37 @@ class Indexer:
             await store.createEvent(self.event)
 
         taskQueue: deque[Awaitable[Any]] = deque()
-        scanComplete = False
 
-        def scan() -> None:
-            nonlocal scanComplete
-            for transmission in self.transmissions():
-                # Note that the data store may not be thread safe but we are OK
-                # here because we aren't doing the actual store work in the
-                # scanning thread; we are merely adding it to a queue, which is
-                # processed on the main thread.
-                taskQueue.append(
-                    self._ensureTransmission(
-                        store,
-                        transmission,
-                        taskQueue,
-                        computeChecksum=computeChecksum,
-                        computeTranscription=computeTranscription,
-                        computeDuration=computeDuration,
-                    )
+        def queueTransmission(transmission: Transmission) -> None:
+            taskQueue.append(
+                self._ensureTransmission(
+                    store,
+                    transmission,
+                    taskQueue,
+                    computeChecksum=computeChecksum,
+                    computeTranscription=computeTranscription,
+                    computeDuration=computeDuration,
                 )
-            scanComplete = True
+            )
 
-        scanTask = deferToThread(scan)
+        if existingOnly:
+            for transmission in await store.transmissions():
+                queueTransmission(transmission)
+            scanComplete = True
+        else:
+            scanComplete = False
+
+            def scan() -> None:
+                nonlocal scanComplete
+                for transmission in self.transmissions():
+                    # Note that the data store may not be thread safe but we are
+                    # OK here because we aren't doing the actual store work in
+                    # the scanning thread; we are merely adding it to a queue,
+                    # which is processed on the main thread.
+                    queueTransmission(transmission)
+                scanComplete = True
+
+            scanTask = deferToThread(scan)
 
         if computeTranscription:
             # Load Whisper before we start tasks
