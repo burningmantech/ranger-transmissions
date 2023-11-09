@@ -1,7 +1,6 @@
 from typing import ClassVar, cast
 
-from pydub import AudioSegment
-from pydub.playback import play
+from playsound import playsound
 from textual import on
 from textual.app import ComposeResult
 from textual.screen import Screen
@@ -157,7 +156,6 @@ class TransmissionsScreen(Screen):
                 self.log(f"No such audio file: {path}")
                 return
 
-            sound = AudioSegment.from_file(str(path), format="wav")
-            play(sound)
+            playsound(str(path))
         except Exception as e:
             self.log(f"Play failed: {e}")
