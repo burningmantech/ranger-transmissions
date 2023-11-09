@@ -134,7 +134,6 @@ class TransmissionsScreen(Screen):
                         )
                     }
                 )
-                self.log(f"{keys}")
                 transmissionList.displayKeys = keys
                 footer.displayedTransmissions = len(keys)
             except Exception as e:
