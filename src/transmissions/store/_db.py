@@ -262,23 +262,24 @@ class DatabaseStore(TXDataStore):
     # Transmissions
     ###
 
+    def _transmissionFromRow(self, row: Mapping[str, Any]) -> Transmission:
+        return Transmission(
+            eventID=cast(str, row["EVENT"]),
+            station=cast(str, row["STATION"]),
+            system=cast(str, row["SYSTEM"]),
+            channel=cast(str, row["CHANNEL"]),
+            startTime=self.fromDateTimeValue(cast(float, row["START_TIME"])),
+            duration=self.fromDurationValue(
+                cast(float | None, row["DURATION"])
+            ),
+            path=Path(cast(str, row["FILE_NAME"])),
+            sha256=cast(str | None, row["SHA256"]),
+            transcription=cast(str | None, row["TRANSCRIPTION"]),
+        )
+
     async def transmissions(self) -> Iterable[Transmission]:
         return (
-            Transmission(
-                eventID=cast(str, row["EVENT"]),
-                station=cast(str, row["STATION"]),
-                system=cast(str, row["SYSTEM"]),
-                channel=cast(str, row["CHANNEL"]),
-                startTime=self.fromDateTimeValue(
-                    cast(float, row["START_TIME"])
-                ),
-                duration=self.fromDurationValue(
-                    cast(float | None, row["DURATION"])
-                ),
-                path=cast(Path, row["FILE_NAME"]),
-                sha256=cast(str | None, row["SHA256"]),
-                transcription=cast(str | None, row["TRANSCRIPTION"]),
-            )
+            self._transmissionFromRow(row)
             for row in await self.runQuery(self.query.transmissions)
         )
 
@@ -298,22 +299,7 @@ class DatabaseStore(TXDataStore):
         ):
             assert found is not True
             found = True
-
-            return Transmission(
-                eventID=cast(str, row["EVENT"]),
-                station=cast(str, row["STATION"]),
-                system=cast(str, row["SYSTEM"]),
-                channel=cast(str, row["CHANNEL"]),
-                startTime=self.fromDateTimeValue(
-                    cast(float, row["START_TIME"])
-                ),
-                duration=self.fromDurationValue(
-                    cast(float | None, row["DURATION"])
-                ),
-                path=Path(cast(str, row["FILE_NAME"])),
-                sha256=cast(str, row["SHA256"]),
-                transcription=cast(str, row["TRANSCRIPTION"]),
-            )
+            return self._transmissionFromRow(row)
 
         return None
 

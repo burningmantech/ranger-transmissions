@@ -42,15 +42,60 @@ class Transmission:
 
     Key: ClassVar[TypeAlias] = KeyType
 
-    startTime: DateTime
-    eventID: str
-    station: str
-    system: str
-    channel: str
+    startTime: DateTime = field()
+    eventID: str = field()
+    station: str = field()
+    system: str = field()
+    channel: str = field()
     duration: TimeDelta | None = field(order=False)
-    path: Path
+    path: Path = field()
     sha256: str | None = field(order=False)
     transcription: str | None = field(order=False)
+
+    @startTime.validator
+    def _check_startTime(self, attribute: object, value: object) -> None:
+        if not isinstance(value, DateTime):
+            raise TypeError("startTime must be a DateTime")
+
+    @eventID.validator
+    def _check_eventID(self, attribute: object, value: object) -> None:
+        if not isinstance(value, str):
+            raise TypeError("eventID must be a str")
+
+    @station.validator
+    def _check_station(self, attribute: object, value: object) -> None:
+        if not isinstance(value, str):
+            raise TypeError("station must be a str")
+
+    @system.validator
+    def _check_system(self, attribute: object, value: object) -> None:
+        if not isinstance(value, str):
+            raise TypeError("system must be a str")
+
+    @channel.validator
+    def _check_channel(self, attribute: object, value: object) -> None:
+        if not isinstance(value, str):
+            raise TypeError("channel must be a str")
+
+    @duration.validator
+    def _check_duration(self, attribute: object, value: object) -> None:
+        if value is not None and not isinstance(value, TimeDelta):
+            raise TypeError("duration must be a TimeDelta or None")
+
+    @path.validator
+    def _check_path(self, attribute: object, value: object) -> None:
+        if not isinstance(value, Path):
+            raise TypeError("path must be a Path")
+
+    @sha256.validator
+    def _check_sha256(self, attribute: object, value: object) -> None:
+        if value is not None and not isinstance(value, str):
+            raise TypeError("sha256 must be a str or None")
+
+    @transcription.validator
+    def _check_transcription(self, attribute: object, value: object) -> None:
+        if value is not None and not isinstance(value, str):
+            raise TypeError("transcription must be a str or None")
 
     @property
     def endTime(self) -> DateTime | None:
