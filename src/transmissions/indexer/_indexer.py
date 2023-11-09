@@ -486,4 +486,5 @@ class Indexer:
         await runInParallel(tasks(), maxTasks=8)
 
         assert scanComplete
-        await scanTask
+        if not existingOnly:
+            await scanTask
