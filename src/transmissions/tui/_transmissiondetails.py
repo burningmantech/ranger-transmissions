@@ -1,4 +1,5 @@
 from datetime import datetime as DateTime
+from pathlib import Path
 from typing import ClassVar
 
 from arrow import get as makeArrow
@@ -47,6 +48,8 @@ class TransmissionDetails(Static):
         if self.transmission is None:
             return
 
+        pathAvailable = Path(self.transmission[7]).is_file()
+
         # key: str = self.transmission[0]
         eventID: str = escape(self.transmission[1])
         station: str = escape(self.transmission[2])
@@ -63,11 +66,14 @@ class TransmissionDetails(Static):
         details: list[str] = []
 
         details.append(
-            f"([bold yellow]{eventID}[/bold yellow])"
-            f" Station [bold yellow]{station}[/bold yellow]"
-            f" on {system} [bold yellow]{channel}[/bold yellow]"
+            f"([bold yellow]{eventID}[/])"
+            f" Station [bold yellow]{station}[/]"
+            f" on {system} [bold yellow]{channel}[/]"
             f" {startTime} ({duration}s)"
         )
+
+        if not pathAvailable:
+            details.append("[bold red]Audio file is not available[/]")
 
         if self.showFileInfo:
             if sha256 is None:
@@ -78,7 +84,7 @@ class TransmissionDetails(Static):
         details.append("")
 
         if transcription is None:
-            details.append("[i](transcription not available)[/i]")
+            details.append("[i](transcription not available)[/]")
         else:
             details.append(transcription.strip())
 

@@ -1,5 +1,7 @@
 from typing import ClassVar, cast
 
+from pydub import AudioSegment
+from pydub.playback import play
 from textual import on
 from textual.app import ComposeResult
 from textual.screen import Screen
@@ -50,6 +52,10 @@ class TransmissionsScreen(Screen):
     Transmissions screen.
     """
 
+    BINDINGS = [
+        ("space", "play", "Play transmission"),  # type: ignore[list-item]
+    ]
+
     DEFAULT_CSS: ClassVar[
         str
     ] = """
@@ -63,6 +69,7 @@ class TransmissionsScreen(Screen):
             transmissionTableKey(transmission.key): transmission
             for transmission in transmissions
         }
+        self.selectedTransmission: Transmission | None = None
 
         super().__init__()
 
@@ -96,15 +103,15 @@ class TransmissionsScreen(Screen):
     def handleTransmissionSelected(
         self, message: TransmissionList.TransmissionSelected
     ) -> None:
-        transmission = self.transmissionsByKey[message.key]
-        self.log(f"Transmission selected: {transmission}")
+        self.selectedTransmission = self.transmissionsByKey[message.key]
+        self.log(f"Transmission selected: {self.selectedTransmission}")
 
         # Pass down to details view
         transmissionDetails = cast(
             TransmissionDetails, self.query_one("TransmissionDetails")
         )
         transmissionDetails.transmission = transmissionAsTuple(
-            message.key, transmission
+            message.key, self.selectedTransmission
         )
 
     @on(SearchField.QueryUpdated)
@@ -136,3 +143,21 @@ class TransmissionsScreen(Screen):
                 self.log(f"Unable to perform search: {e}")
         else:
             transmissionList.displayKeys = None
+
+    async def action_play(self) -> None:
+        self.log(f"Play requested: {self.selectedTransmission}")
+
+        if self.selectedTransmission is None:
+            self.log("No transmission selected")
+            return
+
+        try:
+            path = self.selectedTransmission.path
+            if not path.is_file():
+                self.log(f"No such audio file: {path}")
+                return
+
+            sound = AudioSegment.from_file(str(path), format="wav")
+            play(sound)
+        except Exception as e:
+            self.log(f"Play failed: {e}")
