@@ -80,6 +80,10 @@ class TransmissionsScreen(Screen):
             transmissionAsTuple(key, transmission)
             for key, transmission in self.transmissionsByKey.items()
         )
+        footer = cast(Footer, self.query_one("Footer"))
+        footer.totalTransmissions = footer.displayedTransmissions = len(
+            self.transmissionsByKey
+        )
 
         try:
             transmissionsIndex = TransmissionsIndex()
@@ -91,11 +95,7 @@ class TransmissionsScreen(Screen):
 
     def compose(self) -> ComposeResult:
         yield Header("Radio Transmissions", id="Header")
-        yield Footer(
-            "Copyright © Burning Man"
-            " - Audio and displayed content is confidential and proprietary",
-            id="Footer",
-        )
+        yield Footer(id="Footer")
         yield Body(id="Body")
 
     @on(TransmissionList.TransmissionSelected)
@@ -117,31 +117,32 @@ class TransmissionsScreen(Screen):
     async def handleSearchQueryUpdated(
         self, message: SearchField.QueryUpdated
     ) -> None:
-        self.log(f"Search query: {message.query}")
-
-        searchQuery = message.query.strip()
-
+        searchQuery = message.query
         transmissionList = cast(
             TransmissionList, self.query_one("TransmissionList")
         )
-        transmissionList.searchQuery = searchQuery
+        footer = cast(Footer, self.query_one("Footer"))
 
         if searchQuery:
+            self.log(f"Search query: {searchQuery}")
             try:
                 keys = frozenset(
                     {
                         transmissionTableKey(result)
                         async for result in self._transcriptionsIndex.search(
-                            message.query
+                            searchQuery
                         )
                     }
                 )
                 self.log(f"{keys}")
                 transmissionList.displayKeys = keys
+                footer.displayedTransmissions = len(keys)
             except Exception as e:
                 self.log(f"Unable to perform search: {e}")
         else:
+            self.log("No search query")
             transmissionList.displayKeys = None
+            footer.displayedTransmissions = len(self.transmissionsByKey)
 
     async def action_play(self) -> None:
         self.log(f"Play requested: {self.selectedTransmission}")

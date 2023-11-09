@@ -84,7 +84,6 @@ class TransmissionList(Static):
     )
     dateTimeDisplayFormat = reactive("ddd YY/MM/DD HH:mm:ss")
     timeZone = reactive("US/Pacific")
-    searchQuery = reactive("")
     displayKeys: reactive[frozenset[str] | None] = reactive(None)
 
     def __init__(self, id: str) -> None:
