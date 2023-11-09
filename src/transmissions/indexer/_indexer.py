@@ -348,7 +348,7 @@ class Indexer:
                 transmission=transmission,
                 error=e,
             )
-            return
+            transcription = f"*** ERROR: {e}"
 
         await store.setTransmissionTranscription(
             eventID=transmission.eventID,
