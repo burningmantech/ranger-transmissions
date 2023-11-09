@@ -33,7 +33,7 @@ class SearchField(Static):
             placeholder=" \N{right-pointing magnifying glass} Search...",
         )
 
-    @on(Input.Changed)
-    def handle_update(self, message: Input.Changed) -> None:
+    @on(Input.Submitted)
+    def handle_update(self, message: Input.Submitted) -> None:
         query = message.value
         self.post_message(self.QueryUpdated(self, query))
