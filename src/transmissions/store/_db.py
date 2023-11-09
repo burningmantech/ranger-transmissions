@@ -352,6 +352,7 @@ class DatabaseStore(TXDataStore):
                 value=self.asDurationValue(duration),
             ),
         )
+        await self.commit()
 
         self.log.info(
             "Set duration to {duration} for: {startTime} [{system}: {channel}]",
@@ -384,6 +385,7 @@ class DatabaseStore(TXDataStore):
                 value=sha256,
             ),
         )
+        await self.commit()
 
         self.log.info(
             "Set SHA256 to {sha256} for: " "{startTime} [{system}: {channel}]",
@@ -416,6 +418,7 @@ class DatabaseStore(TXDataStore):
                 value=transcription,
             ),
         )
+        await self.commit()
 
         self.log.info(
             "Set transcription to {transcription!r} for: "
