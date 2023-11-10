@@ -8,5 +8,5 @@ pyobjc==10.0; sys_platform=="darwin"
 rich==13.6.0
 simpleaudio==1.0.4; sys_platform=="darwin"
 textual==0.41.0
-Twisted==22.10.0
+Twisted==23.10.0
 Whoosh==2.7.4
