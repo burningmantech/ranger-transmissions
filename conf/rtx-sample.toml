@@ -1,3 +1,10 @@
+[Audio.Event.2023]
+
+Name = "Burning Man 2023"
+
+SourceDirectory = "~/Google Drive/Shared drives/2023 Radio System Archive"
+
+
 [Store]
 
 Type = "SQLite"
@@ -6,3 +13,8 @@ Type = "SQLite"
 [Store.SQLite]
 
 File = "./data/rtx.sqlite"
+
+
+[SearchIndex]
+
+File = "./data/rtx.whoosh_index"

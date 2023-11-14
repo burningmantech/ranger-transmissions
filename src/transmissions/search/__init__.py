@@ -18,7 +18,7 @@
 Radio transmission indexer
 """
 
-from ._search import TransmissionsIndex
+from ._search import Location, TransmissionsIndex
 
 
-__all__ = ("TransmissionsIndex",)
+__all__ = ("Location", "TransmissionsIndex")
