@@ -294,7 +294,7 @@ class Indexer:
             "Computing duration for {transmission}", transmission=transmission
         )
         try:
-            duration = await deferToThread(self._duration, transmission.path)
+            duration = self._duration(transmission.path)
         except Exception as e:
             self.log.error(
                 "Unable to compute duration for "
@@ -339,9 +339,8 @@ class Indexer:
             transmission=transmission,
         )
         try:
-            transcription = await deferToThread(
-                self._transcription, transmission.path
-            )
+            # Not thread-safe
+            transcription = self._transcription(transmission.path)
         except Exception as e:
             self.log.error(
                 "Unable to transcribe transmission {transmission}: {error}",
