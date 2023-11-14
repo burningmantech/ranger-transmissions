@@ -51,9 +51,7 @@ class TransmissionsScreen(Screen):
     Transmissions screen.
     """
 
-    BINDINGS = [
-        ("space", "play", "Play transmission"),  # type: ignore[list-item]
-    ]
+    BINDINGS = [("space", "play", "Play transmission")]
 
     DEFAULT_CSS: ClassVar[
         str

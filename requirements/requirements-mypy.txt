@@ -1,2 +1,2 @@
-mypy==0.981
+mypy==1.7.0
 pydub-stubs==0.25.1.1
