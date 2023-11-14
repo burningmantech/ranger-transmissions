@@ -27,10 +27,10 @@ from transmissions.ext.click import readConfig
 from transmissions.ext.logger import startLogging
 from transmissions.indexer import Indexer
 from transmissions.model import Event, Transmission
-from transmissions.search import TransmissionsIndex
 from transmissions.store import TXDataStore
 from transmissions.tui import Application as TUIApplication
 
+from ._search import SearchIndexFactory, searchIndexFactoryFromConfig
 from ._store import StoreFactory, storeFactoryFromConfig
 
 
@@ -83,6 +83,16 @@ def storeFactoryFromContext(ctx: Context) -> StoreFactory:
     """
     assert ctx.default_map is not None
     return cast(StoreFactory, ctx.default_map["_config"]["storeFactory"])
+
+
+def searchIndexFactoryFromContext(ctx: Context) -> SearchIndexFactory:
+    """
+    Get the search index factory from the given context.
+    """
+    assert ctx.default_map is not None
+    return cast(
+        SearchIndexFactory, ctx.default_map["_config"]["searchIndexFactory"]
+    )
 
 
 def configuredEventsFromContext(ctx: Context) -> Iterable[tuple[Event, Path]]:
@@ -222,6 +232,9 @@ def main(ctx: Context, config: str) -> None:
     #     ctx.default_map = {command: commonDefaults for command in ("index",)}
 
     configuration["storeFactory"] = storeFactoryFromConfig(configuration)
+    configuration["searchIndexFactory"] = searchIndexFactoryFromConfig(
+        configuration
+    )
 
     startLogging()
 
@@ -272,14 +285,14 @@ def transmissions(ctx: Context, search: str) -> None:
     """
 
     async def app(store: TXDataStore) -> None:
+        searchIndex = await searchIndexFactoryFromContext(ctx)(store)
+
         transmissionsByKey = {t.key: t for t in await store.transmissions()}
 
         if search:
-            index = TransmissionsIndex()
-            await index.connect()
-            await index.add(transmissionsByKey.values())
             transmissions: Iterable[Transmission] = [
-                transmissionsByKey[key] async for key in index.search(search)
+                transmissionsByKey[key]
+                async for key in searchIndex.search(search)
             ]
         else:
             transmissions = transmissionsByKey.values()
