@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from typing import ClassVar, cast
 
 from playsound import playsound
@@ -61,12 +62,17 @@ class TransmissionsScreen(Screen):
         }
         """
 
-    def __init__(self, transmissions: tuple[Transmission, ...]) -> None:
+    def __init__(
+        self,
+        transmissions: Sequence[Transmission],
+        searchIndex: TransmissionsIndex,
+    ) -> None:
         self.transmissionsByKey = {
             transmissionTableKey(transmission.key): transmission
             for transmission in transmissions
         }
         self.selectedTransmission: Transmission | None = None
+        self.searchIndex = searchIndex
 
         super().__init__()
 
@@ -82,14 +88,6 @@ class TransmissionsScreen(Screen):
         footer.totalTransmissions = footer.displayedTransmissions = len(
             self.transmissionsByKey
         )
-
-        try:
-            transmissionsIndex = TransmissionsIndex()
-            await transmissionsIndex.connect()
-            await transmissionsIndex.add(self.transmissionsByKey.values())
-            self._transcriptionsIndex = transmissionsIndex
-        except Exception as e:
-            self.log(f"Unable to index transmissions: {e}")
 
     def compose(self) -> ComposeResult:
         yield Header("Radio Transmissions", id="Header")
@@ -127,9 +125,7 @@ class TransmissionsScreen(Screen):
                 keys = frozenset(
                     {
                         transmissionTableKey(result)
-                        async for result in self._transcriptionsIndex.search(
-                            searchQuery
-                        )
+                        async for result in self.searchIndex.search(searchQuery)
                     }
                 )
                 transmissionList.displayKeys = keys

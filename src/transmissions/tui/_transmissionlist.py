@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from datetime import datetime as DateTime
 from enum import StrEnum, auto
 
@@ -29,7 +30,7 @@ TransmissionTableRowCells = tuple[
     str,  # transcription
 ]
 TransmissionTableRowData = tuple[TransmissionTableRowCells, str]
-TransmissionTableData = tuple[TransmissionTableRowData, ...]
+TransmissionTableData = Sequence[TransmissionTableRowData]
 
 
 class TransmissionList(Static):
@@ -66,7 +67,7 @@ class TransmissionList(Static):
         def control(self) -> Widget:
             return self._control
 
-    transmissions: reactive[tuple[TransmissionTuple, ...]] = reactive(())
+    transmissions: reactive[Sequence[TransmissionTuple]] = reactive(())
     displayColumns = reactive(
         frozenset(
             (
@@ -208,7 +209,7 @@ class TransmissionList(Static):
         self.updateTable()
 
     def watch_transmissions(
-        self, transmissions: tuple[TransmissionTuple, ...]
+        self, transmissions: Sequence[TransmissionTuple]
     ) -> None:
         self.log(f"Received {len(self.transmissions)} transmissions")
         try:

@@ -310,7 +310,8 @@ def application(ctx: Context) -> None:
     """
 
     async def app(store: TXDataStore) -> None:
-        app = TUIApplication(await store.transmissions())
+        searchIndex = await searchIndexFactoryFromContext(ctx)(store)
+        app = TUIApplication(await store.transmissions(), searchIndex)
         app.run()
 
     run(ctx, app, reactor=asyncioReactor)
