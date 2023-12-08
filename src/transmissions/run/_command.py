@@ -77,31 +77,37 @@ def groupClassWithConfigParam(param: str) -> type[Group]:
 defaultConfigPath = Path("~/.rtx.toml")
 
 
+def configurationFromContext(ctx: Context) -> dict[str, Any]:
+    """
+    Get the configuration from the given context.
+    """
+    assert ctx.default_map is not None
+    assert "_config" in ctx.default_map
+    return cast(dict[str, Any], ctx.default_map["_config"])
+
+
 def storeFactoryFromContext(ctx: Context) -> StoreFactory:
     """
     Get the data store factory from the given context.
     """
-    assert ctx.default_map is not None
-    return cast(StoreFactory, ctx.default_map["_config"]["storeFactory"])
+    configuration = configurationFromContext(ctx)
+    return cast(StoreFactory, configuration["storeFactory"])
 
 
 def searchIndexFactoryFromContext(ctx: Context) -> SearchIndexFactory:
     """
     Get the search index factory from the given context.
     """
-    assert ctx.default_map is not None
-    return cast(
-        SearchIndexFactory, ctx.default_map["_config"]["searchIndexFactory"]
-    )
+    configuration = configurationFromContext(ctx)
+    return cast(SearchIndexFactory, configuration["searchIndexFactory"])
 
 
 def configuredEventsFromContext(ctx: Context) -> Iterable[tuple[Event, Path]]:
     """
     Get events from the given context.
     """
-    assert ctx.default_map is not None
-
-    eventConfig = ctx.default_map["_config"].get("Audio", {}).get("Event", {})
+    configuration = configurationFromContext(ctx)
+    eventConfig = configuration.get("Audio", {}).get("Event", {})
 
     for eventID, eventDict in eventConfig.items():
         try:
@@ -177,7 +183,7 @@ def printTransmissions(transmissions: Iterable[Transmission]) -> None:
     table.add_column("Duration")
     table.add_column("Text")
 
-    unknown = "-?-"
+    unknown = "…"
 
     def displayDateTime(dateTime: DateTime) -> str:
         arrow = makeArrow(dateTime).to("US/Pacific")
@@ -223,14 +229,7 @@ def main(ctx: Context, config: str) -> None:
     """
     Radio transmission indexing tool.
     """
-    assert ctx.default_map is not None
-    configuration = ctx.default_map["_config"]
-
-    # if ctx.default_map is None:
-    #     commonDefaults = readConfig(Path(config))
-
-    #     ctx.default_map = {command: commonDefaults for command in ("index",)}
-
+    configuration = configurationFromContext(ctx)
     configuration["storeFactory"] = storeFactoryFromConfig(configuration)
     configuration["searchIndexFactory"] = searchIndexFactoryFromConfig(
         configuration
