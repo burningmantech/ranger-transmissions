@@ -20,8 +20,9 @@ from rich.console import Console as RichConsole
 from rich.table import Table as RichTable
 from twisted.internet import asyncioreactor as asyncioReactor
 from twisted.internet import default as defaultReactor
-from twisted.internet.interfaces import IReactorCore
 from twisted.internet.task import react
+from twisted.logger import Logger
+from twisted.web.server import Site
 
 from transmissions.ext.click import readConfig
 from transmissions.ext.logger import startLogging
@@ -35,6 +36,13 @@ from ._store import StoreFactory, storeFactoryFromConfig
 
 
 __all__ = ()
+
+
+log = Logger()
+
+# Instead of importing it becase mypy doesn't handle ZopeInterface or
+# Twisted's reactor-as-module hack well
+IReactorTCP = Any
 
 
 @frozen(kw_only=True)
@@ -136,7 +144,7 @@ Application = Callable[[TXDataStore], Awaitable[None]]
 
 
 def run(
-    ctx: Context, app: Application, *, reactor: Any = defaultReactor
+    ctx: Context, app: Application, *, reactor: IReactorTCP = defaultReactor
 ) -> None:
     """
     Interact with the data.
@@ -145,7 +153,7 @@ def run(
 
     storeFactory = storeFactoryFromContext(ctx)
 
-    async def runInReactor(reactor: IReactorCore) -> None:
+    async def runInReactor(reactor: IReactorTCP) -> None:
         try:
             store = await storeFactory()
             try:
@@ -314,3 +322,34 @@ def application(ctx: Context) -> None:
         app.run()
 
     run(ctx, app, reactor=asyncioReactor)
+
+
+@main.command()
+@pass_context
+def web(ctx: Context) -> None:
+    """
+    Web server.
+    """
+    from twisted.internet import reactor as _reactor
+
+    from transmissions.webapi import Application as WebAPIApplication
+
+    reactor = cast(IReactorTCP, _reactor)
+
+    configuration = configurationFromContext(ctx)
+    storeFactoryFromContext(ctx)
+
+    host = "localhost"
+    port = 8080
+
+    log.info(
+        "Setting up web service at http://{host}:{port}/",
+        host=host,
+        port=port,
+    )
+
+    application = WebAPIApplication(config=configuration)
+    factory = Site(application.router.resource())
+    reactor.listenTCP(port, factory, interface=host)
+
+    reactor.run()
