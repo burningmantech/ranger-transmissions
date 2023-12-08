@@ -25,6 +25,8 @@ from klein import Klein
 from twisted.logger import Logger
 from twisted.web.iweb import IRequest
 
+from transmissions.store import TXDataStore
+
 
 __all__ = ()
 
@@ -39,6 +41,7 @@ class Application:
     router: ClassVar[Klein] = Klein()
 
     config: dict[str, Any]
+    store: TXDataStore
 
     @router.route("/")
     async def rootEndpoint(self, request: IRequest) -> str:

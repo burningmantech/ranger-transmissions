@@ -18,8 +18,10 @@ from click import (
 from rich.box import DOUBLE_EDGE as RICH_DOUBLE_EDGE
 from rich.console import Console as RichConsole
 from rich.table import Table as RichTable
+from twisted.application.runner._runner import Runner
 from twisted.internet import asyncioreactor as asyncioReactor
 from twisted.internet import default as defaultReactor
+from twisted.internet.defer import Deferred, ensureDeferred
 from twisted.internet.task import react
 from twisted.logger import Logger
 from twisted.web.server import Site
@@ -163,6 +165,7 @@ def run(
         except KeyboardInterrupt:
             click.echo("Interrupted.")
 
+    startLogging()
     react(runInReactor)
 
 
@@ -242,8 +245,6 @@ def main(ctx: Context, config: str) -> None:
     configuration["searchIndexFactory"] = searchIndexFactoryFromConfig(
         configuration
     )
-
-    startLogging()
 
 
 @main.command()
@@ -337,19 +338,33 @@ def web(ctx: Context) -> None:
     reactor = cast(IReactorTCP, _reactor)
 
     configuration = configurationFromContext(ctx)
-    storeFactoryFromContext(ctx)
+    storeFactory = storeFactoryFromContext(ctx)
 
-    host = "localhost"
-    port = 8080
+    def whenRunning() -> Deferred[None]:
+        async def run() -> None:
+            store = await storeFactory()
 
-    log.info(
-        "Setting up web service at http://{host}:{port}/",
-        host=host,
-        port=port,
+            host = "localhost"
+            port = 8080
+
+            log.info(
+                "Setting up web service at http://{host}:{port}/",
+                host=host,
+                port=port,
+            )
+
+            application = WebAPIApplication(config=configuration, store=store)
+            factory = Site(application.router.resource())
+            reactor.listenTCP(port, factory, interface=host)
+
+        return ensureDeferred(run())
+
+    runner = Runner(
+        reactor=reactor,
+        # defaultLogLevel=X,
+        # logFile=stdout,
+        # fileLogObserverFactory=fileLogObserverFactory,
+        whenRunning=whenRunning,  # type: ignore[arg-type]
+        # whenRunningArguments={},
     )
-
-    application = WebAPIApplication(config=configuration)
-    factory = Site(application.router.resource())
-    reactor.listenTCP(port, factory, interface=host)
-
-    reactor.run()
+    runner.run()
