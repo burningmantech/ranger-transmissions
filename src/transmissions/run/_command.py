@@ -22,6 +22,7 @@ from twisted.application.runner._runner import Runner
 from twisted.internet import asyncioreactor as asyncioReactor
 from twisted.internet import default as defaultReactor
 from twisted.internet.defer import Deferred, ensureDeferred
+from twisted.internet.interfaces import IReactorCore, IReactorTCP
 from twisted.internet.task import react
 from twisted.logger import Logger
 from twisted.web.server import Site
@@ -41,10 +42,6 @@ __all__ = ()
 
 
 log = Logger()
-
-# Instead of importing it becase mypy doesn't handle ZopeInterface or
-# Twisted's reactor-as-module hack well
-IReactorTCP = Any
 
 
 @frozen(kw_only=True)
@@ -146,12 +143,15 @@ Application = Callable[[TXDataStore], Awaitable[None]]
 
 
 def run(
-    ctx: Context, app: Application, *, reactor: IReactorTCP = defaultReactor
+    ctx: Context,
+    app: Application,
+    *,
+    reactor: IReactorTCP = cast(IReactorTCP, defaultReactor),
 ) -> None:
     """
     Interact with the data.
     """
-    reactor.install()
+    reactor.install()  # type: ignore[attr-defined]
 
     storeFactory = storeFactoryFromContext(ctx)
 
@@ -322,7 +322,7 @@ def application(ctx: Context) -> None:
         app = TUIApplication(await store.transmissions(), searchIndex)
         app.run()
 
-    run(ctx, app, reactor=asyncioReactor)
+    run(ctx, app, reactor=cast(IReactorTCP, asyncioReactor))
 
 
 @main.command()
@@ -331,11 +331,9 @@ def web(ctx: Context) -> None:
     """
     Web server.
     """
-    from twisted.internet import reactor as _reactor
+    from twisted.internet import reactor as reactor
 
     from transmissions.webapi import Application as WebAPIApplication
-
-    reactor = cast(IReactorTCP, _reactor)
 
     configuration = configurationFromContext(ctx)
     storeFactory = storeFactoryFromContext(ctx)
@@ -355,12 +353,14 @@ def web(ctx: Context) -> None:
 
             application = WebAPIApplication(config=configuration, store=store)
             factory = Site(application.router.resource())
-            reactor.listenTCP(port, factory, interface=host)
+            cast(IReactorTCP, reactor).listenTCP(  # type: ignore[call-arg]
+                port, factory, interface=host
+            )
 
         return ensureDeferred(run())
 
     runner = Runner(
-        reactor=reactor,
+        reactor=cast(IReactorCore, reactor),
         # defaultLogLevel=X,
         # logFile=stdout,
         # fileLogObserverFactory=fileLogObserverFactory,

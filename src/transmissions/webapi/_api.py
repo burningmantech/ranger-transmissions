@@ -18,6 +18,8 @@
 Transmissions JSON API web application.
 """
 
+from collections.abc import Callable, Iterable
+from enum import StrEnum
 from typing import Any, ClassVar
 
 from attrs import frozen
@@ -25,10 +27,46 @@ from klein import Klein
 from twisted.logger import Logger
 from twisted.web.iweb import IRequest
 
+from transmissions.model import Transmission
+from transmissions.model.json import (
+    jsonObjectFromModelObject,
+    jsonTextFromObject,
+)
 from transmissions.store import TXDataStore
 
 
 __all__ = ()
+
+
+class ContentType(StrEnum):
+    """
+    MIME content types.
+    """
+
+    json = "application/json"
+    text = "text/plain"
+
+
+class HeaderName(StrEnum):
+    """
+    HTTP header names.
+    """
+
+    contentType = "Content-Type"
+
+
+def writeJSONArray(
+    request: IRequest, items: Iterable[Any], asJSONBytes: Callable[[Any], bytes]
+) -> None:
+    first = True
+    request.write(b"[")
+    for item in items:
+        if first:
+            first = False
+        else:
+            request.write(b",")
+        request.write(asJSONBytes(item))
+    request.write(b"]")
 
 
 @frozen(kw_only=True, eq=False)
@@ -45,11 +83,22 @@ class Application:
 
     @router.route("/")
     async def rootEndpoint(self, request: IRequest) -> str:
+        request.setHeader(HeaderName.contentType, ContentType.text)
+
         return "transmissions API server"
 
     @router.route("/transmissions/")
-    async def transmissionsEndpoint(self, request: IRequest) -> str:
+    async def transmissionsEndpoint(self, request: IRequest) -> bytes:
         """
         Transmissions endpoint.
         """
-        return "tx"
+        transmissions = await self.store.transmissions()
+
+        def asJSONBytes(transmission: Transmission) -> bytes:
+            return jsonTextFromObject(
+                jsonObjectFromModelObject(transmission)
+            ).encode("utf-8")
+
+        request.setHeader(HeaderName.contentType, ContentType.json)
+        writeJSONArray(request, transmissions, asJSONBytes)
+        return b""
