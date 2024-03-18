@@ -9,6 +9,6 @@ pydub==0.25.1
 pyobjc==10.2; sys_platform=="darwin"
 rich==13.7.1
 simpleaudio==1.0.4; sys_platform=="darwin"
-textual==0.52.1
+textual==0.53.1
 Twisted==24.3.0
 Whoosh==2.7.4
