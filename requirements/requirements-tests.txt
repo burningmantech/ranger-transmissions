@@ -1,1 +1,1 @@
-hypothesis==6.102.1
+hypothesis==6.102.4
