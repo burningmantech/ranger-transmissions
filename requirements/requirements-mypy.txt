@@ -1,4 +1,4 @@
-mypy==1.7.1
+mypy==1.10.1
 mypy-zope==1.0.5
 
 pydub-stubs==0.25.1.1
