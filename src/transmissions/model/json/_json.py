@@ -23,7 +23,7 @@ from datetime import datetime as DateTime
 from datetime import timedelta as TimeDelta
 from enum import Enum
 from json import JSONEncoder, dumps, loads
-from typing import Any, ClassVar, Union, cast
+from typing import Any, ClassVar, cast
 
 from arrow.parser import DateTimeParser
 from cattr import Converter
@@ -36,7 +36,7 @@ __all__ = ()
 log = Logger()
 
 
-JSON = Union[Mapping[str, Any], Iterable[Any], int, str, float, bool, None]
+JSON = Mapping[str, Any] | Iterable[Any] | int | str | float | bool | None
 
 
 class Encoder(JSONEncoder):
@@ -172,9 +172,7 @@ def modelObjectFromJSONObject(json: JSON, modelClass: type) -> Any:
     try:
         return jsonDeserialize(json, modelClass)
     except KeyError as e:
-        raise JSONCodecError(
-            f"Invalid JSON for {modelClass.__name__}: {json}"
-        ) from e
+        raise JSONCodecError(f"Invalid JSON for {modelClass.__name__}: {json}") from e
 
 
 # Utilities
@@ -191,9 +189,7 @@ def deserialize(
             cls = getattr(typeEnum, key.name).value
         except AttributeError as e:
             raise AttributeError(
-                "No attribute {attribute!r} in type enum {enum!r}".format(
-                    attribute=key.name, enum=typeEnum
-                )
+                f"No attribute {key.name!r} in type enum {typeEnum!r}"
             ) from e
         try:
             return jsonDeserialize(obj.get(key.value, None), cls)
@@ -207,8 +203,5 @@ def deserialize(
             raise
 
     return cls(
-        **{
-            key.name: deserializeKey(key)
-            for key in cast(Iterable[Enum], keyEnum)
-        }
+        **{key.name: deserializeKey(key) for key in cast(Iterable[Enum], keyEnum)}
     )

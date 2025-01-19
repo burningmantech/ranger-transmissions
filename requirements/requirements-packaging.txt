@@ -1,2 +1,0 @@
-readme-renderer==44.0
-twine==5.1.1

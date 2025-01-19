@@ -52,12 +52,8 @@ class Transmission:
         validator=optional(instance_of(TimeDelta)), order=False
     )
     path: Path = field(validator=instance_of(Path))
-    sha256: str | None = field(
-        validator=optional(instance_of(str)), order=False
-    )
-    transcription: str | None = field(
-        validator=optional(instance_of(str)), order=False
-    )
+    sha256: str | None = field(validator=optional(instance_of(str)), order=False)
+    transcription: str | None = field(validator=optional(instance_of(str)), order=False)
 
     @property
     def endTime(self) -> DateTime | None:

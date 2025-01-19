@@ -20,12 +20,12 @@ Transmissions database tooling.
 
 from abc import abstractmethod
 from collections.abc import Callable, Iterable, Iterator, Mapping
+from datetime import UTC
 from datetime import datetime as DateTime
 from datetime import timedelta as TimeDelta
-from datetime import timezone as TimeZone
 from pathlib import Path
 from textwrap import dedent
-from typing import Any, ClassVar, Optional, TypeVar, Union, cast
+from typing import Any, ClassVar, TypeVar, cast
 
 from attrs import field, frozen
 from twisted.logger import Logger
@@ -39,7 +39,7 @@ from ._exceptions import StorageError
 __all__ = ()
 
 
-ParameterValue = Optional[Union[bytes, str, int, float]]
+ParameterValue = bytes | str | int | float | None
 Parameters = Mapping[str, ParameterValue]
 
 
@@ -133,7 +133,7 @@ class DatabaseStore(TXDataStore):
         if not isinstance(value, float):
             raise TypeError("Time stamp in SQLite store must be a float")
 
-        return DateTime.fromtimestamp(value, tz=TimeZone.utc)
+        return DateTime.fromtimestamp(value, tz=UTC)
 
     @staticmethod
     def asDurationValue(duration: TimeDelta) -> ParameterValue:
@@ -248,7 +248,7 @@ class DatabaseStore(TXDataStore):
 
     async def createEvent(self, event: Event) -> None:
         await self.runOperation(
-            self.query.createEvent, dict(eventID=event.id, eventName=event.name)
+            self.query.createEvent, {"eventID": event.id, "eventName": event.name}
         )
         await self.commit()
 
@@ -269,9 +269,7 @@ class DatabaseStore(TXDataStore):
             system=cast(str, row["SYSTEM"]),
             channel=cast(str, row["CHANNEL"]),
             startTime=self.fromDateTimeValue(cast(float, row["START_TIME"])),
-            duration=self.fromDurationValue(
-                cast(float | None, row["DURATION"])
-            ),
+            duration=self.fromDurationValue(cast(float | None, row["DURATION"])),
             path=Path(cast(str, row["FILE_NAME"])),
             sha256=cast(str | None, row["SHA256"]),
             transcription=cast(str | None, row["TRANSCRIPTION"]),
@@ -290,12 +288,12 @@ class DatabaseStore(TXDataStore):
 
         for row in await self.runQuery(
             self.query.transmission,
-            dict(
-                eventID=eventID,
-                system=system,
-                channel=channel,
-                startTime=self.asDateTimeValue(startTime),
-            ),
+            {
+                "eventID": eventID,
+                "system": system,
+                "channel": channel,
+                "startTime": self.asDateTimeValue(startTime),
+            },
         ):
             assert found is not True
             found = True
@@ -311,17 +309,17 @@ class DatabaseStore(TXDataStore):
 
         await self.runOperation(
             self.query.createTransmission,
-            dict(
-                eventID=transmission.eventID,
-                station=transmission.station,
-                system=transmission.system,
-                channel=transmission.channel,
-                startTime=self.asDateTimeValue(transmission.startTime),
-                duration=duration,
-                fileName=str(transmission.path),
-                sha256=transmission.sha256,
-                transcription=transmission.transcription,
-            ),
+            {
+                "eventID": transmission.eventID,
+                "station": transmission.station,
+                "system": transmission.system,
+                "channel": transmission.channel,
+                "startTime": self.asDateTimeValue(transmission.startTime),
+                "duration": duration,
+                "fileName": str(transmission.path),
+                "sha256": transmission.sha256,
+                "transcription": transmission.transcription,
+            },
         )
         await self.commit()
 
@@ -344,13 +342,13 @@ class DatabaseStore(TXDataStore):
         """
         await self.runOperation(
             self.query.setTransmission_duration,
-            dict(
-                eventID=eventID,
-                system=system,
-                channel=channel,
-                startTime=self.asDateTimeValue(startTime),
-                value=self.asDurationValue(duration),
-            ),
+            {
+                "eventID": eventID,
+                "system": system,
+                "channel": channel,
+                "startTime": self.asDateTimeValue(startTime),
+                "value": self.asDurationValue(duration),
+            },
         )
         await self.commit()
 
@@ -377,18 +375,18 @@ class DatabaseStore(TXDataStore):
         """
         await self.runOperation(
             self.query.setTransmission_sha256,
-            dict(
-                eventID=eventID,
-                system=system,
-                channel=channel,
-                startTime=self.asDateTimeValue(startTime),
-                value=sha256,
-            ),
+            {
+                "eventID": eventID,
+                "system": system,
+                "channel": channel,
+                "startTime": self.asDateTimeValue(startTime),
+                "value": sha256,
+            },
         )
         await self.commit()
 
         self.log.info(
-            "Set SHA256 to {sha256} for: " "{startTime} [{system}: {channel}]",
+            "Set SHA256 to {sha256} for: {startTime} [{system}: {channel}]",
             storeWriteClass=Transmission,
             eventID=eventID,
             system=system,
@@ -410,13 +408,13 @@ class DatabaseStore(TXDataStore):
         """
         await self.runOperation(
             self.query.setTransmission_transcription,
-            dict(
-                eventID=eventID,
-                system=system,
-                channel=channel,
-                startTime=self.asDateTimeValue(startTime),
-                value=transcription,
-            ),
+            {
+                "eventID": eventID,
+                "system": system,
+                "channel": channel,
+                "startTime": self.asDateTimeValue(startTime),
+                "value": transcription,
+            },
         )
         await self.commit()
 
@@ -454,9 +452,7 @@ class DatabaseManager:
         currentVersion = await self.store.dbSchemaVersion()
 
         if currentVersion < 0:
-            raise StorageError(
-                f"No upgrade path from schema version {currentVersion}"
-            )
+            raise StorageError(f"No upgrade path from schema version {currentVersion}")
 
         if currentVersion == latestVersion:
             # No upgrade needed
@@ -501,8 +497,7 @@ class DatabaseManager:
                 await self.store.applySchema(sql)
             except StorageError as e:
                 raise StorageError(
-                    f"Unable to upgrade schema from "
-                    f"{fromVersion} to {toVersion}: {e}"
+                    f"Unable to upgrade schema from {fromVersion} to {toVersion}: {e}"
                 ) from e
 
         fromVersion = currentVersion

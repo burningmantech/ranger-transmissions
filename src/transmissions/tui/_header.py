@@ -11,9 +11,7 @@ class Header(Static):
     App header.
     """
 
-    DEFAULT_CSS: ClassVar[
-        str
-    ] = """
+    DEFAULT_CSS: ClassVar[str] = """
         Header {
             height: 3;
             dock: top;

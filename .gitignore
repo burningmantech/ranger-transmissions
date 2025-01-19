@@ -1,10 +1,14 @@
-/.hypothesis
-/.tox
+__pycache__/
+/.hypothesis/
+/.ruff_cache
+/.tox/
+/.venv/
 /build/
+/cached/
 /conf/rtx.toml
 /data/
 /dist/
 /htmlcov/
 /htmldocs/
 /src/*.egg-info/
-__pycache__/
+/wheels/

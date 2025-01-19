@@ -18,7 +18,7 @@ class SearchField(Static):
         Search field updated message.
         """
 
-        def __init__(self, control: Widget, query: str):
+        def __init__(self, control: Widget, query: str) -> None:
             self._control = control
             self.query = query
             super().__init__()
@@ -30,7 +30,7 @@ class SearchField(Static):
     def compose(self) -> ComposeResult:
         yield Input(
             id="SearchField",
-            placeholder=" \N{right-pointing magnifying glass} Search...",
+            placeholder=" \N{RIGHT-POINTING MAGNIFYING GLASS} Search...",
         )
 
     @on(Input.Submitted)

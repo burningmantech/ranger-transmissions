@@ -43,9 +43,7 @@ class TransmissionsIndex:
 
     _index: Index | None = None
 
-    async def connect(
-        self, location: Location | Path = Location.memory
-    ) -> None:
+    async def connect(self, location: Location | Path = Location.memory) -> None:
         """
         Connect to the index.
         """
@@ -78,14 +76,14 @@ class TransmissionsIndex:
         count = 0
 
         for transmission in transmissions:
-            fields = dict(
-                eventID=transmission.eventID,
-                station=transmission.station,
-                system=transmission.system,
-                channel=transmission.channel,
-                startTime=transmission.startTime,
-                path=str(transmission.path),
-            )
+            fields = {
+                "eventID": transmission.eventID,
+                "station": transmission.station,
+                "system": transmission.system,
+                "channel": transmission.channel,
+                "startTime": transmission.startTime,
+                "path": str(transmission.path),
+            }
             if transmission.duration is not None:
                 fields["duration"] = transmission.duration.total_seconds()
             if transmission.sha256 is not None:
@@ -101,9 +99,7 @@ class TransmissionsIndex:
         # way to await on completion of the indexing thread here.
         writer.commit()
 
-        self.log.info(
-            "Added {count} transmissions to search index", count=count
-        )
+        self.log.info("Added {count} transmissions to search index", count=count)
 
     async def clear(self) -> None:
         """

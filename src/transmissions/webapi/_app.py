@@ -87,7 +87,7 @@ class Application:
 
         return "transmissions API server"
 
-    @router.route("/transmissions/")
+    @router.route("/api/transmissions/")
     async def transmissionsEndpoint(self, request: IRequest) -> bytes:
         """
         Transmissions endpoint.
@@ -95,9 +95,9 @@ class Application:
         transmissions = await self.store.transmissions()
 
         def asJSONBytes(transmission: Transmission) -> bytes:
-            return jsonTextFromObject(
-                jsonObjectFromModelObject(transmission)
-            ).encode("utf-8")
+            return jsonTextFromObject(jsonObjectFromModelObject(transmission)).encode(
+                "utf-8"
+            )
 
         request.setHeader(HeaderName.contentType, ContentType.json)
         writeJSONArray(request, transmissions, asJSONBytes)

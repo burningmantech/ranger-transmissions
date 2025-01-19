@@ -1,4 +1,5 @@
 from collections.abc import Iterable
+from typing import ClassVar
 
 from textual.app import App
 
@@ -16,13 +17,13 @@ class Application(App):
     Transmissions application.
     """
 
-    TITLE = "Transmissions"
-    SUB_TITLE = ""
-
-    BINDINGS = [
+    BINDINGS: ClassVar = [
         ("d", "dark", "Toggle dark mode"),
         ("q", "quit", "Quit application"),
     ]
+
+    TITLE = "Transmissions"
+    SUB_TITLE = ""
 
     def __init__(
         self,
@@ -34,9 +35,7 @@ class Application(App):
         super().__init__()
 
     def on_mount(self) -> None:
-        self.push_screen(
-            TransmissionsScreen(self.transmissions, self.searchIndex)
-        )
+        self.push_screen(TransmissionsScreen(self.transmissions, self.searchIndex))
 
     async def action_quit(self) -> None:
         self.exit()

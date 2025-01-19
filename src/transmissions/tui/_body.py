@@ -16,9 +16,7 @@ class Body(Static):
     Container for the application body.
     """
 
-    DEFAULT_CSS: ClassVar[
-        str
-    ] = """
+    DEFAULT_CSS: ClassVar[str] = """
         Body {
             width: 1fr;
             height: 1fr;

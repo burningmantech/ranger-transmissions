@@ -1,7 +1,6 @@
 from collections.abc import Sequence
 from typing import ClassVar, cast
 
-from playsound import playsound
 from textual import on
 from textual.app import ComposeResult
 from textual.screen import Screen
@@ -25,9 +24,7 @@ def transmissionTableKey(key: Transmission.Key) -> str:
     return ":".join(str(i) for i in key)
 
 
-def transmissionAsTuple(
-    key: str, transmission: Transmission
-) -> TransmissionTuple:
+def transmissionAsTuple(key: str, transmission: Transmission) -> TransmissionTuple:
     if transmission.duration is None:
         duration = None
     else:
@@ -52,11 +49,9 @@ class TransmissionsScreen(Screen):
     Transmissions screen.
     """
 
-    BINDINGS = [("space", "play", "Play transmission")]
+    BINDINGS: ClassVar = [("space", "play", "Play transmission")]
 
-    DEFAULT_CSS: ClassVar[
-        str
-    ] = """
+    DEFAULT_CSS: ClassVar[str] = """
         TransmissionsScreen {
             background: $background-darken-3;
         }
@@ -77,9 +72,7 @@ class TransmissionsScreen(Screen):
         super().__init__()
 
     async def on_mount(self) -> None:
-        transmissionList = cast(
-            TransmissionList, self.query_one("TransmissionList")
-        )
+        transmissionList = cast(TransmissionList, self.query_one("TransmissionList"))
         transmissionList.transmissions = tuple(
             transmissionAsTuple(key, transmission)
             for key, transmission in self.transmissionsByKey.items()
@@ -110,13 +103,9 @@ class TransmissionsScreen(Screen):
         )
 
     @on(SearchField.QueryUpdated)
-    async def handleSearchQueryUpdated(
-        self, message: SearchField.QueryUpdated
-    ) -> None:
+    async def handleSearchQueryUpdated(self, message: SearchField.QueryUpdated) -> None:
         searchQuery = message.query
-        transmissionList = cast(
-            TransmissionList, self.query_one("TransmissionList")
-        )
+        transmissionList = cast(TransmissionList, self.query_one("TransmissionList"))
         footer = cast(Footer, self.query_one("Footer"))
 
         if searchQuery:
@@ -130,7 +119,7 @@ class TransmissionsScreen(Screen):
                 )
                 transmissionList.displayKeys = keys
                 footer.displayedTransmissions = len(keys)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 self.log(f"Unable to perform search: {e}")
         else:
             self.log("No search query")
@@ -150,6 +139,6 @@ class TransmissionsScreen(Screen):
                 self.log(f"No such audio file: {path}")
                 return
 
-            playsound(str(path))
-        except Exception as e:
+            self.log("Playback not implemented...")
+        except Exception as e:  # noqa: BLE001
             self.log(f"Play failed: {e}")

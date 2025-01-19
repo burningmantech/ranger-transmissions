@@ -24,9 +24,8 @@ from datetime import timedelta as TimeDelta
 from datetime import timezone as TimeZone
 from typing import Any
 
-from hypothesis.strategies import SearchStrategy, composite
+from hypothesis.strategies import SearchStrategy, composite, integers, text
 from hypothesis.strategies import datetimes as _datetimes
-from hypothesis.strategies import integers, text
 
 from ._event import Event
 
@@ -49,8 +48,7 @@ def timeZones(draw: Callable[..., Any]) -> TimeZone:
     """
     offset = draw(integers(min_value=-(60 * 24) + 1, max_value=(60 * 24) - 1))
     timeDelta = TimeDelta(minutes=offset)
-    timeZone = TimeZone(offset=timeDelta, name=f"{offset}s")
-    return timeZone
+    return TimeZone(offset=timeDelta, name=f"{offset}s")
 
 
 def dateTimes(

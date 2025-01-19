@@ -58,7 +58,7 @@ class TransmissionList(Static):
         Transmission selected message.
         """
 
-        def __init__(self, control: Widget, key: str):
+        def __init__(self, control: Widget, key: str) -> None:
             self._control = control
             self.key = key
             super().__init__()
@@ -208,20 +208,18 @@ class TransmissionList(Static):
         self._tableData = tuple(tableData)
         self.updateTable()
 
-    def watch_transmissions(
-        self, transmissions: Sequence[TransmissionTuple]
-    ) -> None:
+    def watch_transmissions(self, transmissions: Sequence[TransmissionTuple]) -> None:
         self.log(f"Received {len(self.transmissions)} transmissions")
         try:
             self.updateTransmissions()
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             self.log(f"Unable to update transmissions: {e}")
 
     def watch_displayKeys(self, displayKeys: frozenset[str]) -> None:
         self.log(f"Received display keys: {displayKeys}")
         try:
             self.updateTable()
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             self.log(f"Unable to update table: {e}")
 
     @on(DataTable.RowSelected)

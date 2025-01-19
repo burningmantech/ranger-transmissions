@@ -67,9 +67,7 @@ class RunningAverage:
 
     def __str__(self) -> str:
         return (
-            f"average {self.average:f}"
-            f" of {self.count} values"
-            f" totaling {self.total:f}"
+            f"average {self.average:f} of {self.count} values totaling {self.total:f}"
         )
 
     @property
@@ -170,9 +168,7 @@ def rateLimited(
         while True:
             if taskCount() >= maxPerWindow:
                 # Stall for a random time interval up to one time window
-                yield deferLater(
-                    cast(IReactorTime, reactor), random() * timeWindow
-                )
+                yield deferLater(cast(IReactorTime, reactor), random() * timeWindow)  # noqa: S311
             else:
                 processed.append(time())
                 yield task

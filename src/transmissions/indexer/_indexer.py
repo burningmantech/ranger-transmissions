@@ -17,8 +17,17 @@ from pydub import AudioSegment
 from twisted.internet.defer import Deferred
 from twisted.internet.threads import deferToThread
 from twisted.logger import Logger
-from whisper import Whisper
-from whisper import load_model as loadWhisper
+
+
+try:
+    from whisper import Whisper
+    from whisper import load_model as loadWhisper
+except ImportError:
+    Whisper = None
+
+    def load_model(name: str) -> Whisper:
+        raise NotImplementedError()
+
 
 from transmissions.ext.parallel import runInParallel
 from transmissions.model import Event, Transmission
@@ -295,10 +304,9 @@ class Indexer:
         )
         try:
             duration = self._duration(transmission.path)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             self.log.error(
-                "Unable to compute duration for "
-                "transmission {transmission}: {error}",
+                "Unable to compute duration for transmission {transmission}: {error}",
                 transmission=transmission,
                 error=e,
             )
@@ -317,9 +325,7 @@ class Indexer:
         store: TXDataStore,
         transmission: Transmission,
     ) -> None:
-        self.log.info(
-            "Computing SHA256 for {transmission}", transmission=transmission
-        )
+        self.log.info("Computing SHA256 for {transmission}", transmission=transmission)
         sha256 = await deferToThread(self._sha256, transmission.path)
         await store.setTransmissionSHA256(
             eventID=transmission.eventID,
@@ -341,7 +347,7 @@ class Indexer:
         try:
             # Not thread-safe
             transcription = self._transcription(transmission.path)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             self.log.error(
                 "Unable to transcribe transmission {transmission}: {error}",
                 transmission=transmission,
