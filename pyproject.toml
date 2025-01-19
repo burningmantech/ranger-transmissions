@@ -20,10 +20,10 @@ dependencies = [
     "klein==24.8.0",
     "openai-whisper==20240930; sys_platform!='darwin' or platform_machine!='x86_64'",
     "pydub==0.25.1",
-    "pyobjc==10.3.1; sys_platform=='darwin'",
+    "pyobjc==10.3.2; sys_platform=='darwin'",
     "rich==13.9.4",
     "simpleaudio==1.0.4; sys_platform=='darwin'",
-    "textual==0.82.0",
+    "textual==0.85.2",
     "Twisted==24.11.0",
     "Whoosh==2.7.4",
 ]
@@ -157,12 +157,19 @@ where = ["src"]
 
 default-groups = []
 [dependency-groups]
+lint = [
+    "pre-commit==4.0.1",
+]
 unit = [
-    "coverage==7.6.1",
+    "coverage==7.6.10",
     "hypothesis==6.112.4",
 ]
 mypy = [
     "mypy-zope==1.0.5",
     "mypy==1.7.1",
     "pydub-stubs==0.25.1.1",
+]
+packaging = [
+    "pip",
+    "twine==5.1.1",
 ]
