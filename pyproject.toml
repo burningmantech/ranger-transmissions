@@ -21,7 +21,7 @@ dependencies = [
     "klein==24.8.0",
     "openai-whisper==20240930; sys_platform!='darwin' or platform_machine!='x86_64'",
     "pydub==0.25.1",
-    "pyobjc==10.3.2; sys_platform=='darwin'",
+    "pyobjc==11.0; sys_platform=='darwin'",
     "rich==13.9.4",
     "simpleaudio==1.0.4; sys_platform=='darwin'",
     "textual==0.85.2",
