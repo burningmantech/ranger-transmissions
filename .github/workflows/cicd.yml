@@ -215,7 +215,6 @@ jobs:
         with:
           name: trial
           path: .tox/${TOX_ENV}/log/trial.log
-          if-no-files-found: ignore
 
       - name: Add comment if optional job failed; delete otherwise
         # this step fails on post-merge runs on master, since there's no
