@@ -24,9 +24,9 @@ dependencies = [
     "pyobjc==11.0; sys_platform=='darwin'",
     "rich==13.9.4",
     "simpleaudio==1.0.4; sys_platform=='darwin'",
-    "textual==0.85.2",
+    "textual==1.0.0",
     "Twisted==24.11.0",
-    "Whoosh==2.7.4",
+    "Whoosh-Reloaded==2.7.5",
 ]
 
 # Authors/maintainers

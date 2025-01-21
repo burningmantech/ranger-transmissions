@@ -18,7 +18,6 @@ class Application(App):
     """
 
     BINDINGS: ClassVar = [
-        ("d", "dark", "Toggle dark mode"),
         ("q", "quit", "Quit application"),
     ]
 
@@ -39,6 +38,3 @@ class Application(App):
 
     async def action_quit(self) -> None:
         self.exit()
-
-    async def action_dark(self) -> None:
-        self.dark = not self.dark
