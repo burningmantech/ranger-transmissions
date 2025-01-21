@@ -288,11 +288,13 @@ class Indexer:
             )
             for filename in filenames:
                 path = Path(dirpath) / filename
-                self.log.debug("Found audio file: {path}", path=path)
+                self.log.debug("Found file: {path}", path=path)
                 try:
                     yield self._transmissionFromFile(path)
                 except InvalidFileError as e:
                     self.log.error("{error}", error=e)
+                except Exception as e:  # noqa: BLE001
+                    self.log.error("Error: {error}", error=e)
 
     async def _addDuration(
         self,
@@ -416,7 +418,7 @@ class Indexer:
         self,
         store: TXDataStore,
         *,
-        existingOnly: bool = True,
+        existingOnly: bool = False,
         computeChecksum: bool = True,
         computeTranscription: bool = True,
         computeDuration: bool = True,
