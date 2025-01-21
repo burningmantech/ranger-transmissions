@@ -45,9 +45,6 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v5
 
-      - name: Set up Tox environment
-        run: uvx --with=tox-uv tox run -e lint --notest
-
       - name: Run Linters
         run: uvx --with=tox-uv tox run -e lint
         env:
@@ -90,9 +87,6 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v5
 
-      - name: Set up Tox environment
-        run: uvx --with=tox-uv tox run -e mypy --notest
-
       - name: Run Mypy
         run: uvx --with=tox-uv tox run -e mypy
 
@@ -127,9 +121,6 @@ jobs:
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5
-
-      - name: Set up Tox environment
-        run: uvx --with=tox-uv tox run -e packaging --notest
 
       - name: Check packaging
         run: uvx --with=tox-uv tox run -e packaging
@@ -204,9 +195,6 @@ jobs:
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5
-
-      - name: Set up Tox environment
-        run: uvx --with=tox-uv tox run -e "${TOX_ENV}" --notest
 
       - name: Run unit tests
         id: test
