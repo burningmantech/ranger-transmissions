@@ -246,8 +246,14 @@ def main(ctx: Context, config: str) -> None:  # noqa: ARG001
 
 
 @main.command()
+@option("--new/--no-new", default=True, help="Search for new transmissions")
+@option("--checksum/--no-checksum", default=True, help="Compute checksums")
+@option("--duration/--no-duration", default=True, help="Compute durations")
+@option("--transcript/--no-transcript", default=True, help="Compute transcripts")
 @pass_context
-def index(ctx: Context) -> None:
+def index(
+    ctx: Context, new: bool, checksum: bool, duration: bool, transcript: bool
+) -> None:
     """
     Index audio files.
     """
@@ -256,7 +262,13 @@ def index(ctx: Context) -> None:
     async def app(store: TXDataStore) -> None:
         for event, sourcePath in configuredEvents:
             indexer = Indexer(event=event, root=sourcePath)
-            await indexer.indexIntoStore(store)
+            await indexer.indexIntoStore(
+                store,
+                existingOnly=not new,
+                computeChecksum=checksum,
+                computeDuration=duration,
+                computeTranscription=transcript,
+            )
 
     run(ctx, app)
 
