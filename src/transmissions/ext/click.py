@@ -14,32 +14,14 @@ from unittest.mock import patch
 
 import click
 from attrs import Factory, mutable
-from click import UsageError, option
+from click import UsageError
 
 
 __all__ = (
     "ClickTestResult",
     "clickTestRun",
-    "composedOptions",
     "readConfig",
-    "trialRunOption",
 )
-
-
-def composedOptions(*options: Callable[..., Callable]) -> Callable[..., Callable]:
-    """
-    Combines options decorators into a single decorator.
-    """
-
-    def wrapper(f: Callable) -> Callable:
-        for o in reversed(options):
-            f = o(f)
-        return f
-
-    return wrapper
-
-
-trialRunOption = option("--trial-run", help="Trial run only", is_flag=True)
 
 
 class Internal(Enum):
