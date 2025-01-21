@@ -13,9 +13,7 @@ __all__ = ()
 SearchIndexFactory = Callable[[TXDataStore], Awaitable[TransmissionsIndex]]
 
 
-def searchIndexFactoryFromConfig(
-    configuration: dict[str, Any]
-) -> SearchIndexFactory:
+def searchIndexFactoryFromConfig(configuration: dict[str, Any]) -> SearchIndexFactory:
     searchConfig = configuration.get("SearchIndex", {})
     fileName = searchConfig.get("File", "~/rtx.whoosh_index")
 
@@ -25,9 +23,12 @@ def searchIndexFactoryFromConfig(
         if fileName:
             indexPath = Path(fileName).expanduser()
             if isinstance(store, SQLiteDataStore):
-                if indexPath.is_dir() and store.dbPath is not None:
-                    if indexPath.stat().st_mtime > store.dbPath.stat().st_mtime:
-                        reindex = False
+                if (
+                    indexPath.is_dir()
+                    and store.dbPath is not None
+                    and indexPath.stat().st_mtime > store.dbPath.stat().st_mtime
+                ):
+                    reindex = False
             else:
                 raise NotImplementedError("Don't know whether to reindex")
             location: Location | Path = indexPath

@@ -1,46 +1,16 @@
+ci:
+  skip:
+    - check-manifest
+
 repos:
 
-  - repo: https://github.com/asottile/pyupgrade
-    rev: "v3.15.0"
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    # Ruff version.
+    rev: v0.8.0
     hooks:
-      - id: pyupgrade
-        args: ["--py311-plus"]
-
-  - repo: https://github.com/psf/black
-    rev: "23.10.1"
-    hooks:
-      - id: black
-
-  - repo: https://github.com/PyCQA/autoflake
-    rev: v2.2.1
-    hooks:
-      - id: autoflake
-        args:
-          - --in-place
-          - --remove-all-unused-imports
-          - --expand-star-imports
-          - --remove-duplicate-keys
-          - --remove-unused-variables
-
-  - repo: https://github.com/PyCQA/flake8
-    rev: 6.1.0
-    hooks:
-      - id: flake8
-        additional_dependencies:
-          - flake8-bugbear==23.9.16
-          - flake8-docstrings==1.7.0
-          - flake8-mutable==1.2.0
-          - flake8-pep3101==2.0.0
-          - pep8-naming==0.13.3
-          - pycodestyle==2.11.1
-          - pydocstyle==6.3.0
-          - pyflakes==3.1.0
-
-  - repo: https://github.com/PyCQA/isort
-    rev: 5.12.0
-    hooks:
-    - id: isort
-      args: ["--filter-files"]
+      - id: ruff
+        args: [ --fix ]
+      - id: ruff-format
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: "v4.5.0"
@@ -63,12 +33,14 @@ repos:
       - id: detect-private-key
       - id: end-of-file-fixer
       - id: fix-byte-order-marker
+      - id: end-of-file-fixer
       - id: forbid-new-submodules
       - id: mixed-line-ending
       - id: name-tests-test
         args:
           - --pytest-test-first
-      - id: requirements-txt-fixer
+      - id: no-commit-to-branch
+        args: ["--branch", "master"]
       - id: trailing-whitespace
 
   - repo: https://github.com/pre-commit/pygrep-hooks
@@ -83,7 +55,7 @@ repos:
       - id: rst-inline-touching-normal
       - id: text-unicode-replacement-char
 
-  # - repo: https://github.com/mgedmin/check-manifest
-  #   rev: "0.49"
-  #   hooks:
-  #     - id: check-manifest
+  - repo: https://github.com/mgedmin/check-manifest
+    rev: "0.50"
+    hooks:
+      - id: check-manifest

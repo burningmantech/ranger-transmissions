@@ -34,7 +34,7 @@ class ConnectionTests(TestCase):
     """
 
     def patchConnectionCallable(self, name: str) -> None:
-        def _connect(database: Any, *args: Any, **kwargs: Any) -> Connection:
+        def _connect(database: Any, *args: Any, **kwargs: Any) -> Connection:  # noqa: ARG001
             self.connections.append(database)
             return Connection(":memory:")
 
@@ -116,9 +116,7 @@ class ConnectionTests(TestCase):
                 PERSON:
                   0: ID(integer) not null *1
                   1: NAME(text) not null
-                """[
-                    1:
-                ]
+                """[1:]
             ).lower(),
         )
 
@@ -198,9 +196,7 @@ class DebugToolsTests(TestCase):
             name="foo",
             query="select * from FOO",
             lines=(
-                QueryPlanExplanation.Line(
-                    nestingOrder=0, selectFrom=0, details="X"
-                ),
+                QueryPlanExplanation.Line(nestingOrder=0, selectFrom=0, details="X"),
             ),
         )
         self.assertEqual(
@@ -224,7 +220,11 @@ class DebugToolsTests(TestCase):
         )
         self.assertEqual(
             str(explanation),
-            ("foo:\n\n" "  -- query --\n\n" "    select * from FOO"),
+            (
+                "foo:\n\n"  # fmt: skip
+                "  -- query --\n\n"
+                "    select * from FOO"
+            ),
         )
 
     def test_explainQueryPlans_error(self) -> None:
@@ -310,7 +310,6 @@ def patchConnect_errors(testCase: TestCase) -> None:
     def connect(database: str | None) -> Connection:
         if database is None:
             database = ":memory:"
-        db = ErrneousSQLiteConnection(database)
-        return db
+        return ErrneousSQLiteConnection(database)
 
     testCase.patch(sqlite, "connect", connect)

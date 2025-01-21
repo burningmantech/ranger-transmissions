@@ -18,9 +18,7 @@ class TransmissionDetails(Static):
     Transmission detail view.
     """
 
-    DEFAULT_CSS: ClassVar[
-        str
-    ] = """
+    DEFAULT_CSS: ClassVar[str] = """
         TransmissionDetails {
             height: 10;
             dock: bottom;
@@ -55,9 +53,7 @@ class TransmissionDetails(Static):
         station: str = escape(self.transmission[2])
         system: str = escape(self.transmission[3])
         channel: str = escape(self.transmission[4])
-        startTime: str = escape(
-            self.dateTimeTextAsDisplayText(self.transmission[5])
-        )
+        startTime: str = escape(self.dateTimeTextAsDisplayText(self.transmission[5]))
         duration: float | None = self.transmission[6]
         path: str = escape(self.transmission[7])
         sha256: str | None = optionalEscape(self.transmission[8])
@@ -93,5 +89,5 @@ class TransmissionDetails(Static):
     def watch_transmission(self, transmission: str) -> None:
         try:
             self.updateDetails()
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             self.log(f"Unable to update transmission details: {e}")

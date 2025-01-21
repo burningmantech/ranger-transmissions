@@ -23,6 +23,6 @@ from ._exceptions import StorageError
 
 
 __all__ = (
-    "TXDataStore",
     "StorageError",
+    "TXDataStore",
 )

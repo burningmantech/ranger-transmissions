@@ -90,9 +90,7 @@ class DataStore(DatabaseStore):
         """
 
         def queries() -> Iterable[tuple[str, str]]:
-            for name in sorted(
-                cls.query.__slots__  # type: ignore[attr-defined]
-            ):
+            for name in sorted(cls.query.__slots__):  # type: ignore[attr-defined]
                 query = getattr(cls.query, name)
                 if type(getattr(cls.query, name)) is Query:
                     yield (query.text, name)
@@ -107,8 +105,7 @@ class DataStore(DatabaseStore):
         try:
             for row in db.execute(cls.query.schemaVersion.text):
                 return cast(int, row["VERSION"])
-            else:
-                raise StorageError("Invalid schema: no version")
+            raise StorageError("Invalid schema: no version")
 
         except SQLiteError as e:
             if e.args[0] == "no such table: SCHEMA_INFO":
@@ -129,9 +126,7 @@ class DataStore(DatabaseStore):
                     self.log.info("Creating in-memory SQLite database")
                     self._state.db = createDB(None, schema="")
                 else:
-                    self.log.info(
-                        "Opening SQLite database: {path}", path=self.dbPath
-                    )
+                    self.log.info("Opening SQLite database: {path}", path=self.dbPath)
                     self._state.db = openDB(self.dbPath, schema="")
 
             except SQLiteError as e:

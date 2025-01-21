@@ -12,9 +12,7 @@ class Footer(Static):
     App footer.
     """
 
-    DEFAULT_CSS: ClassVar[
-        str
-    ] = """
+    DEFAULT_CSS: ClassVar[str] = """
         Footer {
             height: 2;
             dock: bottom;
@@ -36,8 +34,7 @@ class Footer(Static):
 
     def updateInfo(self) -> None:
         info = (
-            f"{self.displayedTransmissions} of "
-            f"{self.totalTransmissions} transmissions"
+            f"{self.displayedTransmissions} of {self.totalTransmissions} transmissions"
         )
         self.update(f"{info}\n{self.disclaimer}")
 

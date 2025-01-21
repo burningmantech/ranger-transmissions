@@ -15,8 +15,7 @@ TransmissionTuple = tuple[
 def optionalEscape(text: str | None) -> str | None:
     if text is None:
         return None
-    else:
-        return escape(text)
+    return escape(text)
 
 
 def dateTimeAsText(datetime: DateTime) -> str:

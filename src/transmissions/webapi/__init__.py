@@ -18,7 +18,7 @@
 Transmissions data store.
 """
 
-from ._api import Application
+from ._app import Application
 
 
 __all__ = ("Application",)

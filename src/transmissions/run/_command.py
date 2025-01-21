@@ -155,7 +155,7 @@ def run(
 
     storeFactory = storeFactoryFromContext(ctx)
 
-    async def runInReactor(reactor: IReactorTCP) -> None:
+    async def runInReactor(reactor: IReactorTCP) -> None:  # noqa: ARG001
         try:
             store = await storeFactory()
             try:
@@ -236,15 +236,13 @@ def printTransmissions(transmissions: Iterable[Transmission]) -> None:
     default=defaultConfigPath,
 )
 @pass_context
-def main(ctx: Context, config: str) -> None:
+def main(ctx: Context, config: str) -> None:  # noqa: ARG001
     """
     Radio transmission indexing tool.
     """
     configuration = configurationFromContext(ctx)
     configuration["storeFactory"] = storeFactoryFromConfig(configuration)
-    configuration["searchIndexFactory"] = searchIndexFactoryFromConfig(
-        configuration
-    )
+    configuration["searchIndexFactory"] = searchIndexFactoryFromConfig(configuration)
 
 
 @main.command()
@@ -299,8 +297,7 @@ def transmissions(ctx: Context, search: str) -> None:
 
         if search:
             transmissions: Iterable[Transmission] = [
-                transmissionsByKey[key]
-                async for key in searchIndex.search(search)
+                transmissionsByKey[key] async for key in searchIndex.search(search)
             ]
         else:
             transmissions = transmissionsByKey.values()
@@ -331,7 +328,7 @@ def web(ctx: Context) -> None:
     """
     Web server.
     """
-    from twisted.internet import reactor as reactor
+    from twisted.internet import reactor
 
     from transmissions.webapi import Application as WebAPIApplication
 
@@ -353,9 +350,7 @@ def web(ctx: Context) -> None:
 
             application = WebAPIApplication(config=configuration, store=store)
             factory = Site(application.router.resource())
-            cast(IReactorTCP, reactor).listenTCP(  # type: ignore[call-arg]
-                port, factory, interface=host
-            )
+            cast(IReactorTCP, reactor).listenTCP(port, factory, interface=host)
 
         return ensureDeferred(run())
 

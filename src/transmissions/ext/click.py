@@ -26,9 +26,7 @@ __all__ = (
 )
 
 
-def composedOptions(
-    *options: Callable[..., Callable]
-) -> Callable[..., Callable]:
+def composedOptions(*options: Callable[..., Callable]) -> Callable[..., Callable]:
     """
     Combines options decorators into a single decorator.
     """
@@ -67,9 +65,7 @@ class ClickTestResult:
     beginLoggingToCalls: Sequence[Any] = ()
 
 
-def clickTestRun(
-    main: Callable[[], None], arguments: list[str]
-) -> ClickTestResult:
+def clickTestRun(main: Callable[[], None], arguments: list[str]) -> ClickTestResult:
     """
     Context manager for testing click applications.
     """
@@ -101,9 +97,7 @@ def clickTestRun(
     echo = click.echo
     click.echo = cast(Callable, captureEcho)
 
-    with patch(
-        "twisted.logger.globalLogBeginner.beginLoggingTo"
-    ) as beginLoggingTo:
+    with patch("twisted.logger.globalLogBeginner.beginLoggingTo") as beginLoggingTo:
         main()
 
     result.beginLoggingToCalls = beginLoggingTo.call_args_list
