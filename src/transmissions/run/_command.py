@@ -15,6 +15,9 @@ from click import (
     pass_context,
     version_option,
 )
+from click import (
+    Path as ClickPath,
+)
 from rich.box import DOUBLE_EDGE as RICH_DOUBLE_EDGE
 from rich.console import Console as RichConsole
 from rich.table import Table as RichTable
@@ -274,6 +277,38 @@ def index(
 
 
 @main.command()
+@click.argument(
+    "file",
+    type=ClickPath(path_type=Path),
+    nargs=-1,
+)
+@pass_context
+def inspect(ctx: Context, file: tuple[Path]) -> None:
+    """
+    Inspect a transmission file and show information about it.
+    """
+    configuredEvents = configuredEventsFromContext(ctx)
+
+    async def app(_store: TXDataStore) -> None:
+        for _filePath in file:
+            filePath = _filePath.resolve()
+
+            for event, _sourcePath in configuredEvents:
+                sourcePath = _sourcePath.resolve()
+
+                # If filePath isn't in sourcePath, it isn't in event
+                if filePath.parts[: len(sourcePath.parts)] != sourcePath.parts:
+                    continue
+
+                indexer = Indexer(event=event, root=sourcePath)
+                transmission = indexer.transmissionFromFile(filePath)
+
+                click.echo(str(transmission))
+
+    run(ctx, app)
+
+
+@main.command()
 @pass_context
 def events(ctx: Context) -> None:
     """
@@ -289,7 +324,7 @@ def events(ctx: Context) -> None:
 @main.command()
 @option(
     "--search",
-    help="Filter output with the given serach query.",
+    help="Filter output with the given search query.",
     type=str,
     metavar="<query>",
     prompt=False,

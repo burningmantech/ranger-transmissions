@@ -67,7 +67,7 @@ class Transmission:
 
     def __str__(self) -> str:
         return (
-            f"{self.startTime} ({self.duration})"
+            f"{self.eventID} {self.startTime} ({self.duration})"
             f" [{self.system}: {self.channel}]"
             f" {self.station}: {self.transcription}"
         )
