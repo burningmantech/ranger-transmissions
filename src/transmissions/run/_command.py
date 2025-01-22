@@ -279,7 +279,7 @@ def index(
 @main.command()
 @click.argument(
     "file",
-    type=ClickPath(exists=True, dir_okay=False, path_type=Path),
+    type=ClickPath(path_type=Path),
     nargs=-1,
 )
 @pass_context
@@ -297,7 +297,7 @@ def inspect(ctx: Context, file: tuple[Path]) -> None:
                 sourcePath = _sourcePath.resolve()
 
                 # If filePath isn't in sourcePath, it isn't in event
-                if filePath.parts[: len(sourcePath.parts)] == sourcePath.parts:
+                if filePath.parts[: len(sourcePath.parts)] != sourcePath.parts:
                     continue
 
                 indexer = Indexer(event=event, root=sourcePath)
@@ -324,7 +324,7 @@ def events(ctx: Context) -> None:
 @main.command()
 @option(
     "--search",
-    help="Filter output with the given serach query.",
+    help="Filter output with the given search query.",
     type=str,
     metavar="<query>",
     prompt=False,

@@ -58,6 +58,7 @@ class Patterns:
 
     _pattern_2017: Pattern[str] | None = None
     _pattern_2023: Pattern[str] | None = None
+    _pattern_2024: Pattern[str] | None = None
 
     @classmethod
     def pattern_2017(cls) -> Pattern:
@@ -152,8 +153,8 @@ class Patterns:
         "2024-08-29 04-54-33 BRC 911 ALT All Call- 'Radio' called 'All'.wav"
         "2024-08-28 10-40-47 A-1 Group Call- 'Security 03' called 'Security'.wav"
 
-        if cls._pattern_2023 is None:
-            cls._pattern_2023 = regex(
+        if cls._pattern_2024 is None:
+            cls._pattern_2024 = regex(
                 r"^"
                 r"(?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})"
                 r" (?P<hour>\d{2})-(?P<minute>\d{2})-(?P<second>\d{2})"
@@ -167,7 +168,7 @@ class Patterns:
                 r".*"
                 r"\.wav$"
             )
-        return cls._pattern_2023
+        return cls._pattern_2024
 
 
 @mutable(kw_only=True)
@@ -239,10 +240,10 @@ class Indexer:
         elif path.name.startswith("2024-"):
             match = Patterns.pattern_2024().match(path.name)
         else:
-            match = None
+            raise InvalidFileError(f"No matching pattern for {path}")
 
         if match is None:
-            raise InvalidFileError(f"Skipping file {path}")
+            raise InvalidFileError(f"Pattern failed for {path}")
 
         def getValue(*names: str, default: str | None = None) -> str:
             for name in names:
@@ -480,14 +481,17 @@ class Indexer:
             if transmission.station != existingTransmission.station:
                 self.log.error(
                     "Duplicate transmissions with different "
-                    "stations {station1} and {station2}",
+                    "stations {station1} and {station2} at "
+                    "file paths {path1} and {path2}",
                     station1=existingTransmission.station,
                     station2=transmission.station,
+                    path1=existingTransmission.path,
+                    path2=transmission.path,
                 )
                 return
             if transmission.path != existingTransmission.path:
-                self.log.error(
-                    "Duplicate transmissions with different "
+                self.log.info(
+                    "Duplicate transmissions with different content at "
                     "file paths {path1} and {path2}",
                     path1=existingTransmission.path,
                     path2=transmission.path,
