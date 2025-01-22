@@ -229,7 +229,7 @@ class Indexer:
 
     def _transmissionFromFile(self, path: Path) -> Transmission | None:
         """
-        Returns a Transmission based on the given Path to a file.
+        Returns a minimally filled in Transmission based on the given Path to a file.
         """
         if path.suffix != ".wav":
             return None
@@ -246,7 +246,10 @@ class Indexer:
 
         def getValue(*names: str, default: str | None = None) -> str:
             for name in names:
-                value = match.group(name)
+                try:
+                    value = match.group(name)
+                except IndexError as e:
+                    raise IndexError(f"e: {name}") from e
                 if value is not None:
                     return value
 
@@ -266,7 +269,10 @@ class Indexer:
         )
 
         # System
-        systemName = getValue("systemName", default="?")
+        try:
+            systemName = getValue("systemName")
+        except IndexError:
+            systemName = "?"
 
         try:
             systemType = getValue("systemType")
@@ -312,6 +318,36 @@ class Indexer:
             duration=duration,
             path=path,
             sha256=sha256Digest,
+            transcription=transcription,
+        )
+
+    def transmissionFromFile(self, path: Path) -> Transmission | None:
+        """
+        Returns a Transmission based on the given Path to a file.
+        """
+        transmission = self._transmissionFromFile(path)
+
+        if transmission is None:
+            return None
+
+        duration = self._duration(path)
+        sha256 = self._sha256(path)
+
+        try:
+            transcription = self._transcription(path)
+        except ModuleNotFoundError:
+            transcription = None
+
+        # Return result
+        return Transmission(
+            eventID=transmission.eventID,
+            station=transmission.station,
+            system=transmission.system,
+            channel=transmission.channel,
+            startTime=transmission.startTime,
+            duration=duration,
+            path=transmission.path,
+            sha256=sha256,
             transcription=transcription,
         )
 
