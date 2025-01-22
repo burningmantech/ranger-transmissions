@@ -5,6 +5,13 @@ Name = "Burning Man 2023"
 SourceDirectory = "~/Google Drive/Shared drives/2023 Radio System Archive"
 
 
+[Audio.Event.2024]
+
+Name = "Burning Man 2024"
+
+SourceDirectory = "~/Google Drive/Shared drives/2024 Radio System Archive"
+
+
 [Store]
 
 Type = "SQLite"

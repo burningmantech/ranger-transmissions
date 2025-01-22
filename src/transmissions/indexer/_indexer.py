@@ -12,7 +12,7 @@ from re import compile as regex
 from time import sleep
 from typing import TYPE_CHECKING, Any, ClassVar, cast
 
-from attrs import frozen
+from attrs import frozen, mutable
 from pydub import AudioSegment
 from twisted.internet.defer import Deferred
 from twisted.internet.threads import deferToThread
@@ -89,7 +89,7 @@ class Patterns:
                 r" (?P<systemName>\w+)"
                 r"(| Call-)"
                 r" (?P<stationType>\w*)"
-                r" _(?P<stationName>.+)_"
+                r" _(?P<stationName1>.+)_"
                 r" calls(| group)"
                 r" (_(?P<channel1>[^_]+)_|(?P<channel2>all dispatchers))"
                 r"( \((?P<minutes>\d{2})-(?P<seconds>\d{2})\))?"
@@ -104,7 +104,7 @@ class Patterns:
         Regex for 2023 file names.
         """
         # Examples:
-        "2023-08-24 18-28-05 SYSTEM A Group Call- 'Ranger Evnt 148' called"
+        "2023-08-24 18-28-05 SYSTEM A Group Call- 'Ranger Evnt 148' called "
         "'RANGER TAC 1'.wav"
 
         "2023-09-04 20-13-56 SYSTEM A Group Call- 'Ranger Shift 57' called "
@@ -137,11 +137,42 @@ class Patterns:
                 r"(?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})"
                 r" (?P<hour>\d{2})-(?P<minute>\d{2})-(?P<second>\d{2})"
                 r" SYSTEM (?P<systemName>[AB]) Group Call-"
-                r" '(?P<stationName>[^']+)' called '(?P<channel1>[^']+)'"
+                r" '(?P<stationName1>[^']+)' called '(?P<channel1>[^']+)'"
                 r".*"
                 r"\.wav$"
             )
         return cls._pattern_2023
+
+    @classmethod
+    def pattern_2024(cls) -> Pattern:
+        """
+        Regex for 2024 file names.
+        """
+        # Examples:
+        "2024-08-29 04-54-33 BRC 911 ALT All Call- 'Radio' called 'All'.wav"
+        "2024-08-28 10-40-47 A-1 Group Call- 'Security 03' called 'Security'.wav"
+
+        if cls._pattern_2023 is None:
+            cls._pattern_2023 = regex(
+                r"^"
+                r"(?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})"
+                r" (?P<hour>\d{2})-(?P<minute>\d{2})-(?P<second>\d{2})"
+                r"("  # Most transmission files use the following
+                r" A-1 Group Call-"
+                r" '(?P<stationName1>[^']+)' called '(?P<channel1>[^']+)'"
+                r"|"  # BRC 911 ALT is weird
+                r" (?P<channel2>BRC 911 ALT)"
+                r" All Call- '(?P<stationName2>[^']+)' called 'All'"
+                r")"
+                r".*"
+                r"\.wav$"
+            )
+        return cls._pattern_2023
+
+
+@mutable(kw_only=True)
+class IndexerState:
+    scanComplete: bool = False
 
 
 @frozen(kw_only=True)
@@ -196,32 +227,49 @@ class Indexer:
         result = self.whisper().transcribe(str(path), fp16=self._whisperUseFP16)
         return cast(str, result["text"])
 
-    def _transmissionFromFile(self, path: Path) -> Transmission:
+    def _transmissionFromFile(self, path: Path) -> Transmission | None:
         """
         Returns a Transmission based on the given Path to a file.
         """
-        match = Patterns.pattern_2023().match(path.name)
+        if path.suffix != ".wav":
+            return None
+
+        if path.name.startswith("2023-"):
+            match = Patterns.pattern_2023().match(path.name)
+        elif path.name.startswith("2024-"):
+            match = Patterns.pattern_2024().match(path.name)
+        else:
+            match = None
 
         if match is None:
             raise InvalidFileError(f"Skipping file {path}")
 
+        def getValue(*names: str, default: str | None = None) -> str:
+            for name in names:
+                value = match.group(name)
+                if value is not None:
+                    return value
+
+            assert default is not None
+            return default
+
         # Start time
 
         startTime = DateTime(
-            year=int(match.group("year")),
-            month=int(match.group("month")),
-            day=int(match.group("day")),
-            hour=int(match.group("hour")),
-            minute=int(match.group("minute")),
-            second=int(match.group("second")),
+            year=int(getValue("year")),
+            month=int(getValue("month")),
+            day=int(getValue("day")),
+            hour=int(getValue("hour")),
+            minute=int(getValue("minute")),
+            second=int(getValue("second")),
             tzinfo=TZInfo.PDT.value,
         )
 
         # System
+        systemName = getValue("systemName", default="?")
 
-        systemName = match.group("systemName")
         try:
-            systemType = match.group("systemType")
+            systemType = getValue("systemType")
         except IndexError:
             system = f"System {systemName}"
         else:
@@ -235,29 +283,26 @@ class Indexer:
             else:
                 system = f"{systemType} {systemName}"
 
-        # Station
+        # Transmitting station
+        stationName = getValue("stationName1", "stationName2")
+        assert stationName is not None
 
-        stationName = match.group("stationName")
         try:
-            stationType = match.group("stationType")
+            stationType = getValue("stationType")
         except IndexError:
             station = stationName
         else:
             station = f"{stationType} {stationName}"
 
         # Channel
-
-        try:
-            channel = match.group("channel1")
-        except IndexError:
-            channel = match.group("channel2")
+        channel = getValue("channel1", "channel2")
+        assert channel is not None
 
         duration = None
         sha256Digest = None
         transcription = None
 
         # Return result
-
         return Transmission(
             eventID=self.event.id,
             station=station,
@@ -275,26 +320,40 @@ class Indexer:
         Returns an Iterable of Transmissions based on files contained within
         the root directory.
         """
-        for (
-            dirpath,
-            dirnames,
-            filenames,
-        ) in walk(self.root):
-            self.log.info(
-                "Scanning directory: {dirpath}",
-                dirpath=dirpath,
-                dirnames=dirnames,
-                filenames=len(filenames),
-            )
-            for filename in filenames:
-                path = Path(dirpath) / filename
-                self.log.debug("Found file: {path}", path=path)
-                try:
-                    yield self._transmissionFromFile(path)
-                except InvalidFileError as e:
-                    self.log.error("{error}", error=e)
-                except Exception as e:  # noqa: BLE001
-                    self.log.error("Error: {error}", error=e)
+        with self.log.failuresHandled("While interating over transmission files:"):
+            for (
+                dirpath,
+                dirnames,
+                filenames,
+            ) in walk(self.root):
+                self.log.info(
+                    "Scanning directory: {dirpath}",
+                    dirpath=dirpath,
+                    dirnames=dirnames,
+                    filenames=len(filenames),
+                )
+                for filename in filenames:
+                    path = Path(dirpath) / filename
+                    self.log.debug("Found file: {path}", path=path)
+                    with self.log.failuresHandled(
+                        "Unable to index {filename}:", filename=filename
+                    ) as op:
+                        try:
+                            transmission = self._transmissionFromFile(path)
+                        except InvalidFileError as e:
+                            self.log.error("{error}", error=e)
+                            continue
+                    if op.failed:
+                        break
+
+                    if transmission is None:
+                        continue
+
+                    self.log.debug(
+                        "Found new transmission: {transmission}",
+                        transmission=transmission,
+                    )
+                    yield transmission
 
     async def _addDuration(
         self,
@@ -304,14 +363,12 @@ class Indexer:
         self.log.info(
             "Computing duration for {transmission}", transmission=transmission
         )
-        try:
+        with self.log.failuresHandled(
+            "Unable to compute duration for transmission {transmission.path}:",
+            transmission=transmission,
+        ) as op:
             duration = self._duration(transmission.path)
-        except Exception as e:  # noqa: BLE001
-            self.log.error(
-                "Unable to compute duration for transmission {transmission}: {error}",
-                transmission=transmission,
-                error=e,
-            )
+        if op.failed:
             return
 
         await store.setTransmissionDuration(
@@ -346,16 +403,14 @@ class Indexer:
             "Computing transcription for {transmission}",
             transmission=transmission,
         )
-        try:
+        with self.log.failuresHandled(
+            "Unable to transcribe transmission {transmission} at {transmission.path}:",
+            transmission=transmission,
+        ) as op:
             # Not thread-safe
             transcription = self._transcription(transmission.path)
-        except Exception as e:  # noqa: BLE001
-            self.log.error(
-                "Unable to transcribe transmission {transmission}: {error}",
-                transmission=transmission,
-                error=e,
-            )
-            transcription = f"*** ERROR: {e}"
+        if op.failure is not None:
+            transcription = f"*** ERROR: {op.failure.value}"
 
         await store.setTransmissionTranscription(
             eventID=transmission.eventID,
@@ -436,34 +491,39 @@ class Indexer:
 
         taskQueue: deque[Awaitable[Any]] = deque()
 
+        state = IndexerState()
+
         def queueTransmission(transmission: Transmission) -> None:
-            taskQueue.append(
-                self._ensureTransmission(
-                    store,
-                    transmission,
-                    taskQueue,
-                    computeChecksum=computeChecksum,
-                    computeTranscription=computeTranscription,
-                    computeDuration=computeDuration,
-                )
-            )
+            async def task() -> None:
+                with self.log.failuresHandled(
+                    "Unable to index transmission {transmission}:",
+                    transmission=transmission,
+                ):
+                    await self._ensureTransmission(
+                        store,
+                        transmission,
+                        taskQueue,
+                        computeChecksum=computeChecksum,
+                        computeTranscription=computeTranscription,
+                        computeDuration=computeDuration,
+                    )
+
+            taskQueue.append(task())
 
         if existingOnly:
             for transmission in await store.transmissions():
                 queueTransmission(transmission)
-            scanComplete = True
+            state.scanComplete = True
         else:
-            scanComplete = False
 
             def scan() -> None:
-                nonlocal scanComplete
                 for transmission in self.transmissions():
                     # Note that the data store may not be thread safe but we are
                     # OK here because we aren't doing the actual store work in
                     # the scanning thread; we are merely adding it to a queue,
                     # which is processed on the main thread.
                     queueTransmission(transmission)
-                scanComplete = True
+                state.scanComplete = True
 
             scanTask = deferToThread(scan)
 
@@ -481,10 +541,12 @@ class Indexer:
                 # altering it as we go.
                 while taskQueue:
                     yield cast(Deferred[Any], taskQueue.pop())
+
                 # The queue is empty, but don't break unless the scanning
                 # thread is also done.
-                if scanComplete:
+                if state.scanComplete:
                     break
+
                 # The scanning thread is not done yet.
                 # Sleep the main thread to let the scanning thread add more
                 # tasks to the queue.
@@ -492,6 +554,6 @@ class Indexer:
 
         await runInParallel(tasks(), maxTasks=8)
 
-        assert scanComplete
+        assert state.scanComplete
         if not existingOnly:
             await scanTask

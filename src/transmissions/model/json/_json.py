@@ -56,11 +56,13 @@ class Encoder(JSONEncoder):
                 return dict(obj)
             return list(iterate())
 
-        try:
-            return JSONEncoder.default(self, obj)
-        except Exception:
-            self._log.critical("Unable to encode object: {obj!r}", obj=obj)
-            raise
+        with self._log.failuresHandled(
+            "Unable to encode object {obj!r}:", obj=obj
+        ) as op:
+            result = JSONEncoder.default(self, obj)
+        if op.failure is not None:
+            op.failure.raiseException()
+        return result
 
 
 class JSONCodecError(Exception):
@@ -191,16 +193,16 @@ def deserialize(
             raise AttributeError(
                 f"No attribute {key.name!r} in type enum {typeEnum!r}"
             ) from e
-        try:
-            return jsonDeserialize(obj.get(key.value, None), cls)
-        except Exception:
-            log.error(
-                "Unable to deserialize {key} as {cls} from {json}",
-                key=key,
-                cls=cls,
-                json=obj,
-            )
-            raise
+        with log.failuresHandled(
+            "Unable to deserialize {key} as {cls} from {json}",
+            key=key,
+            cls=cls,
+            json=obj,
+        ) as op:
+            result = jsonDeserialize(obj.get(key.value, None), cls)
+        if op.failure is not None:
+            op.failure.raiseException()
+        return result
 
     return cls(
         **{key.name: deserializeKey(key) for key in cast(Iterable[Enum], keyEnum)}
