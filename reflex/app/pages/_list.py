@@ -7,7 +7,7 @@ from twisted.logger import Logger
 
 import app as Global
 from app.model import RXTransmission
-from reflex import Component, State, heading, page, vstack
+from reflex import Component, State, card, event, heading, page, text, vstack
 
 
 log = Logger()
@@ -20,7 +20,12 @@ class TransmissionsTableState(State):
 
     transmissions: list[RXTransmission]
 
+    selectedTransmission: dict
+
+    @event
     async def load(self) -> None:
+        self.selectedTransmission = {}
+
         try:
             store = await Global.storeFactory.store()
         except FileNotFoundError as e:
@@ -29,6 +34,11 @@ class TransmissionsTableState(State):
             self.transmissions = [
                 RXTransmission.fromTransmission(t) for t in await store.transmissions()
             ]
+
+    @event
+    async def rowSelected(self, event: dict) -> None:
+        log.info("Row selected: {e}", e=event)
+        self.selectedTransmission = event["data"]
 
 
 column_defs = [
@@ -80,15 +90,27 @@ def transmissionsTable() -> Component:
         row_data=TransmissionsTableState.transmissions,
         column_defs=column_defs,
         # pagination=True,
-        pagination_page_size=50,
-        pagination_page_size_selector=[10, 25, 50, 100],
+        # pagination_page_size=50,
+        # pagination_page_size_selector=[10, 25, 50, 100],
+        on_mount=TransmissionsTableState.load,
+        on_row_clicked=TransmissionsTableState.rowSelected,
         theme="alpine",
         width="100%",
-        height="94vh",
+        height="85vh",
     )
 
 
-@page(route="/", title="Transmissions List", on_load=TransmissionsTableState.load)
+def selectedTransmissionInfo() -> Component:
+    """
+    Information about the selected transmission.
+    """
+    return card(
+        text(TransmissionsTableState.selectedTransmission.transcription),
+        width="100%",
+    )
+
+
+@page(route="/", title="Transmissions List")
 def transmissionsListPage() -> Component:
     """
     Transmissions table page
@@ -96,5 +118,7 @@ def transmissionsListPage() -> Component:
     return vstack(
         heading("Transmissions List"),
         transmissionsTable(),
+        selectedTransmissionInfo(),
         margin="1vh",
+        height="100vh",
     )
