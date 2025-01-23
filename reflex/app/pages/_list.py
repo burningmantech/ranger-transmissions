@@ -2,11 +2,12 @@
 Transmissions Table
 """
 
+from reflex_ag_grid import ag_grid
 from twisted.logger import Logger
 
 import app as Global
 from app.model import RXTransmission
-from reflex import Component, State, container, foreach, page, table, vstack
+from reflex import Component, State, container, page, vstack
 
 
 log = Logger()
@@ -27,43 +28,41 @@ class State(State):
         else:
             self.transmissions = [
                 RXTransmission.fromTransmission(t) for t in await store.transmissions()
-            ][:500]  # FIXME: Dies if data set is too big
+            ]
 
 
-headerNames = (
-    "Event",
-    "Time",
-    "Duration",
-    "System",
-    "Channel",
-    "Station",
-    "Text",
-)
-
-
-def rowForTransmission(transmission: RXTransmission) -> Component:
-    return table.row(
-        table.cell(transmission.eventID),
-        table.cell(transmission.startTime),
-        table.cell(transmission.duration),
-        table.cell(transmission.system),
-        table.cell(transmission.channel),
-        table.cell(transmission.station),
-        table.cell(transmission.transcription),
-    )
+column_defs = [
+    ag_grid.column_def(
+        field="eventID", header_name="Event", filter=ag_grid.filters.text
+    ),
+    ag_grid.column_def(
+        field="startTime", header_name="Start Time", filter=ag_grid.filters.date
+    ),
+    ag_grid.column_def(
+        field="duration", header_name="Duration", filter=ag_grid.filters.number
+    ),
+    ag_grid.column_def(
+        field="channel", header_name="Channel", filter=ag_grid.filters.text
+    ),
+    ag_grid.column_def(
+        field="station", header_name="Station", filter=ag_grid.filters.text
+    ),
+    ag_grid.column_def(
+        field="transcription", header_name="Transcript", filter=ag_grid.filters.text
+    ),
+]
 
 
 def transmissionsTable() -> Component:
-    return table.root(
-        table.header(
-            table.row(
-                foreach(headerNames, table.column_header_cell),
-            ),
-        ),
-        table.body(
-            foreach(State.transmissions, rowForTransmission),
-        ),
+    return ag_grid(
+        id="transmissions_table",
+        row_data=State.transmissions,
+        column_defs=column_defs,
+        pagination=True,
+        pagination_page_size=50,
+        pagination_page_size_selector=[25, 50, 100],
         width="100%",
+        height="95vh",
     )
 
 

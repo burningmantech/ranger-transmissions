@@ -3454,6 +3454,7 @@ dependencies = [
     { name = "pydub" },
     { name = "pyobjc", marker = "sys_platform == 'darwin'" },
     { name = "reflex" },
+    { name = "reflex-ag-grid" },
     { name = "rich" },
     { name = "simpleaudio", marker = "sys_platform == 'darwin'" },
     { name = "textual" },
@@ -3491,6 +3492,7 @@ requires-dist = [
     { name = "pydub", specifier = "==0.25.1" },
     { name = "pyobjc", marker = "sys_platform == 'darwin'", specifier = "==11.0" },
     { name = "reflex", specifier = "==0.6.8" },
+    { name = "reflex-ag-grid", specifier = "==0.0.10" },
     { name = "rich", specifier = "==13.9.4" },
     { name = "simpleaudio", marker = "sys_platform == 'darwin'", specifier = "==1.0.4" },
     { name = "textual", specifier = "==1.0.0" },
@@ -3576,6 +3578,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/3a/8c/e42af826dc935f12a6486806a944725f292bb1591facc23290247028974a/reflex-0.6.8.tar.gz", hash = "sha256:cc6892e235902b6c86bc64ee6c0459d7c73f9ffedbc37f91d8b48de76a74a688", size = 524828 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/21/7a/b94b35921fc2039f5229cc746fbf1d80c55440599f2dce937abbab7f8d40/reflex-0.6.8-py3-none-any.whl", hash = "sha256:958f4e81eff1eccd553200dc80b93980b5888dd712bbf51f436d4d245037acec", size = 767050 },
+]
+
+[[package]]
+name = "reflex-ag-grid"
+version = "0.0.10"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "reflex" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/80/a0/9be21f89afdb9bf382d327b542117b3867e3a1eaa5fa11c672d430803129/reflex_ag_grid-0.0.10.tar.gz", hash = "sha256:d1aef1005ae9b13ba265df1fe2aaee7a871b9f1310c599fe77cc216336620965", size = 13972 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e3/56/1ed7582723d2a60d696079d3a48eabae1109dc04b8a87359da0c36d3e311/reflex_ag_grid-0.0.10-py3-none-any.whl", hash = "sha256:1e6cc92aaa7f314f56669eb5caf9cc44d862dd0237d0be15aad1c6f267247a73", size = 14275 },
 ]
 
 [[package]]

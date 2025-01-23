@@ -1,3 +1,6 @@
+from datetime import datetime as DateTime
+from datetime import timedelta as TimeDelta
+from pathlib import Path
 from typing import Self
 
 from reflex import Base
@@ -11,29 +14,24 @@ class RXTransmission(Base):
 
     @classmethod
     def fromTransmission(cls, transmission: Transmission) -> Self:
-        if transmission.duration is None:
-            duration = None
-        else:
-            duration = transmission.duration.total_seconds()
-
         return cls(
-            startTime=str(transmission.startTime),
+            startTime=transmission.startTime,
             eventID=transmission.eventID,
             station=transmission.station,
             system=transmission.system,
             channel=transmission.channel,
-            duration=duration,
-            path=str(transmission.path),
+            duration=transmission.duration,
+            path=transmission.path,
             sha256=transmission.sha256,
             transcription=transmission.transcription,
         )
 
-    startTime: str | None
+    startTime: DateTime | None
     eventID: str
     station: str
     system: str
     channel: str
-    duration: float | None
-    path: str
+    duration: TimeDelta | None
+    path: Path
     sha256: str | None
     transcription: str | None
