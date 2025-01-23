@@ -141,12 +141,12 @@ jobs:
         python-version: ["3.12"]  # Versions to test with coverage
         tox-prefix: ["coverage"]
         optional: [false]
-        include:
-          # Test next Python version but allow it to fail
-          - os: "ubuntu-latest"
-            python-version: "3.13"
-            optional: true
-            tox-prefix: "test"
+        # include:
+        #   # Test next Python version but allow it to fail
+        #   - os: "ubuntu-latest"
+        #     python-version: "3.13"
+        #     optional: true
+        #     tox-prefix: "test"
 
     steps:
 
