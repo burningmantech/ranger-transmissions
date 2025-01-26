@@ -2,6 +2,9 @@
 Transmissions Table
 """
 
+from base64 import b64encode
+from pathlib import Path
+
 from reflex_ag_grid import ag_grid
 from twisted.logger import Logger
 
@@ -28,6 +31,13 @@ from reflex import (
 log = Logger()
 
 
+def dataURLFromPath(path: Path, mimeType: str) -> str:
+    with path.open("rb") as f:
+        data = f.read()
+    b64Text = b64encode(data).decode("utf-8")
+    return f"data:{mimeType};base64,{b64Text}"
+
+
 class TransmissionsTableState(State):
     """
     Transmissions table state.
@@ -36,6 +46,7 @@ class TransmissionsTableState(State):
     transmissions: list[RXTransmission]
 
     selectedTransmission: dict
+    audioURL: str = ""
 
     @event
     async def load(self) -> None:
@@ -53,7 +64,9 @@ class TransmissionsTableState(State):
     @event
     async def rowSelected(self, event: dict) -> None:
         log.info("Row selected: {e}", e=event)
-        self.selectedTransmission = event["data"]
+        tx = event["data"]
+        self.selectedTransmission = tx
+        self.audioURL = dataURLFromPath(Path(tx["path"]), "audio/wav")
 
 
 column_defs = [
@@ -120,6 +133,7 @@ def selectedTransmissionInfo() -> Component:
     Information about the selected transmission.
     """
     tx = TransmissionsTableState.selectedTransmission
+
     return cond(
         tx,
         card(
@@ -141,7 +155,7 @@ def selectedTransmissionInfo() -> Component:
                 blockquote(tx.transcription),
                 divider(),
                 audio(
-                    url=f"file://{tx.path}",
+                    url=TransmissionsTableState.audioURL,
                     width="100%",
                     height="32px",
                 ),
