@@ -61,9 +61,10 @@ class TransmissionsTableState(State):
                 RXTransmission.fromTransmission(t) for t in await store.transmissions()
             ]
 
+        log.info("{count} transmissions loaded", count=len(self.transmissions))
+
     @event
     async def rowSelected(self, event: dict) -> None:
-        log.info("Row selected: {e}", e=event)
         tx = event["data"]
         self.selectedTransmission = tx
         self.audioURL = dataURLFromPath(Path(tx["path"]), "audio/wav")
@@ -161,6 +162,7 @@ def selectedTransmissionInfo() -> Component:
                 ),
                 width="100%",
             ),
+            width="100%",
         ),
         fragment(),
     )
