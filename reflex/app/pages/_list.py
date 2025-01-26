@@ -7,7 +7,22 @@ from twisted.logger import Logger
 
 import app as Global
 from app.model import RXTransmission
-from reflex import Component, State, card, event, heading, page, text, vstack
+from reflex import (
+    Component,
+    State,
+    audio,
+    blockquote,
+    card,
+    code,
+    cond,
+    divider,
+    event,
+    fragment,
+    heading,
+    page,
+    text,
+    vstack,
+)
 
 
 log = Logger()
@@ -76,7 +91,7 @@ column_defs = [
         field="transcription",
         header_name="Transcript",
         filter=ag_grid.filters.text,
-        initialWidth=800,
+        initialWidth=5000,
     ),
 ]
 
@@ -96,7 +111,7 @@ def transmissionsTable() -> Component:
         on_row_clicked=TransmissionsTableState.rowSelected,
         theme="alpine",
         width="100%",
-        height="85vh",
+        height="50vh",
     )
 
 
@@ -104,9 +119,36 @@ def selectedTransmissionInfo() -> Component:
     """
     Information about the selected transmission.
     """
-    return card(
-        text(TransmissionsTableState.selectedTransmission.transcription),
-        width="100%",
+    tx = TransmissionsTableState.selectedTransmission
+    return cond(
+        tx,
+        card(
+            vstack(
+                heading("Selected Transmission", as_="h2"),
+                divider(),
+                text(
+                    "Station ",
+                    code(tx.station),
+                    " on channel ",
+                    code(tx.channel),
+                    " at ",
+                    text.strong(tx.startTime),
+                ),
+                text("File: ", code(tx.path), size="1"),
+                text("SHA256: ", code(tx.sha256), size="1"),
+                divider(),
+                text("Transcript:"),
+                blockquote(tx.transcription),
+                divider(),
+                audio(
+                    url=f"file://{tx.path}",
+                    width="100%",
+                    height="32px",
+                ),
+                width="100%",
+            ),
+        ),
+        fragment(),
     )
 
 
@@ -119,6 +161,7 @@ def transmissionsListPage() -> Component:
         heading("Transmissions List"),
         transmissionsTable(),
         selectedTransmissionInfo(),
+        spacing="4",
         margin="1vh",
         height="100vh",
     )
