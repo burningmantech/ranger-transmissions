@@ -5,12 +5,17 @@ Application
 from os import environ
 from pathlib import Path
 
+from twisted.logger import Logger
+
 import app as appModule
 from reflex import App
 from transmissions.ext.click import readConfig
 from transmissions.ext.logger import startLogging
 from transmissions.run._store import storeFactoryFromConfig
 from transmissions.store import TXDataStore
+
+
+log = Logger()
 
 
 class StoreFactory:
@@ -25,6 +30,8 @@ class StoreFactory:
         Get and cache the data store.
         """
         if self._store is None:
+            log.info("Initializing data store")
+
             defaultConfigPath = Path("~/.rtx.toml")  # FIXME: Not DRY; see _command.py
 
             fileName = environ.get("CONFIG", defaultConfigPath)
