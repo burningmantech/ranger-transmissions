@@ -131,7 +131,8 @@ class TXDataStore(ABC):
         system: str,
         channel: str,
         startTime: DateTime,
-        transcription: str,
+        transcription: str | None,
+        transcriptionVersion: int | None,
     ) -> None:
         """
         Set the transcription text for the given transmission.

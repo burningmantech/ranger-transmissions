@@ -67,6 +67,7 @@ class Queries:
     setTransmission_duration: Query
     setTransmission_sha256: Query
     setTransmission_transcription: Query
+    setTransmission_transcriptionVersion: Query
 
 
 @frozen(kw_only=True)
@@ -273,6 +274,7 @@ class DatabaseStore(TXDataStore):
             path=Path(cast(str, row["FILE_NAME"])),
             sha256=cast(str | None, row["SHA256"]),
             transcription=cast(str | None, row["TRANSCRIPTION"]),
+            transcriptionVersion=cast(int | None, row["TRANSCRIPTION_VERSION"]),
         )
 
     async def transmissions(self) -> Iterable[Transmission]:
@@ -319,6 +321,7 @@ class DatabaseStore(TXDataStore):
                 "fileName": str(transmission.path),
                 "sha256": transmission.sha256,
                 "transcription": transmission.transcription,
+                "transcriptionVersion": transmission.transcriptionVersion,
             },
         )
         await self.commit()
@@ -401,11 +404,17 @@ class DatabaseStore(TXDataStore):
         system: str,
         channel: str,
         startTime: DateTime,
-        transcription: str,
+        transcription: str | None,
+        transcriptionVersion: int | None,
     ) -> None:
         """
         Set the transcription text for the given transmission.
         """
+        if transcription is None:
+            assert transcriptionVersion is None
+        else:
+            assert transcriptionVersion is not None
+
         await self.runOperation(
             self.query.setTransmission_transcription,
             {
@@ -414,6 +423,16 @@ class DatabaseStore(TXDataStore):
                 "channel": channel,
                 "startTime": self.asDateTimeValue(startTime),
                 "value": transcription,
+            },
+        )
+        await self.runOperation(
+            self.query.setTransmission_transcriptionVersion,
+            {
+                "eventID": eventID,
+                "system": system,
+                "channel": channel,
+                "startTime": self.asDateTimeValue(startTime),
+                "value": transcriptionVersion,
             },
         )
         await self.commit()

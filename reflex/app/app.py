@@ -30,13 +30,14 @@ class StoreFactory:
         Get and cache the data store.
         """
         if self._store is None:
-            log.info("Initializing data store")
-
             defaultConfigPath = Path("~/.rtx.toml")  # FIXME: Not DRY; see _command.py
-
             fileName = environ.get("CONFIG", defaultConfigPath)
+
+            log.info("Reading configuration file: {file}", file=fileName)
             config = readConfig(Path(fileName))
             storeFactory = storeFactoryFromConfig(config, create=False)
+
+            log.info("Initializing data store")
             self._store = await storeFactory()
 
         return self._store

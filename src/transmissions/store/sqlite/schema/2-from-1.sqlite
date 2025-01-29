@@ -1,0 +1,7 @@
+-- Add TRANSCRIPTION_VERSION column to TRANSMISSION
+
+alter table TRANSMISSION add column TRANSCRIPTION_VERSION int;
+
+-- Update schema version
+
+update SCHEMA_INFO set VERSION = 2;

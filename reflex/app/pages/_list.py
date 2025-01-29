@@ -67,6 +67,12 @@ class TransmissionsTableState(State):
     async def rowSelected(self, event: dict) -> None:
         tx = event["data"]
         self.selectedTransmission = tx
+
+        # FIXME: This creates a "data:" URL containing the audio for the selected
+        # recording. It works but it requires reading the audio, encoding the data
+        # into a URL, and shuttling that data to the client, all of which happens
+        # whether the user plays the audio or not.
+        # What we should have is an endpoint for each transmission's audio.
         self.audioURL = dataURLFromPath(Path(tx["path"]), "audio/wav")
 
 

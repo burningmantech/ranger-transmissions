@@ -21,9 +21,18 @@ from twisted.logger import Logger
 
 try:
     from whisper import Whisper
+    from whisper import __version__ as _whisperVersion
     from whisper import load_model as loadWhisper
+
+    def getWhisperVersion() -> int:
+        assert len(_whisperVersion) == 8  # noqa: PLR2004
+        return int(_whisperVersion)
+
 except ImportError:
     Whisper = None
+
+    def getWhisperVersion() -> int:
+        return 0
 
     def load_model(name: str) -> Whisper:
         raise NotImplementedError()
@@ -185,6 +194,7 @@ class Indexer:
     log: ClassVar[Logger] = Logger()
 
     _whisper: ClassVar[Whisper] = None
+    _whisperVersion: ClassVar[int] = getWhisperVersion()
     _whisperUseFP16 = None
 
     @classmethod
@@ -308,6 +318,7 @@ class Indexer:
         duration = None
         sha256Digest = None
         transcription = None
+        transcriptionVersion = None
 
         # Return result
         return Transmission(
@@ -320,6 +331,7 @@ class Indexer:
             path=path,
             sha256=sha256Digest,
             transcription=transcription,
+            transcriptionVersion=transcriptionVersion,
         )
 
     def transmissionFromFile(self, path: Path) -> Transmission | None:
@@ -336,8 +348,10 @@ class Indexer:
 
         try:
             transcription = self._transcription(path)
+            transcriptionVersion = self._whisperVersion
         except ModuleNotFoundError:
             transcription = None
+            transcriptionVersion = None
 
         # Return result
         return Transmission(
@@ -350,6 +364,7 @@ class Indexer:
             path=transmission.path,
             sha256=sha256,
             transcription=transcription,
+            transcriptionVersion=transcriptionVersion,
         )
 
     def transmissions(self) -> Iterable[Transmission]:
@@ -445,9 +460,11 @@ class Indexer:
             transmission=transmission,
         ) as op:
             # Not thread-safe
-            transcription = self._transcription(transmission.path)
+            transcription: str | None = self._transcription(transmission.path)
+            transcriptionVersion: int | None = self._whisperVersion
         if op.failure is not None:
-            transcription = f"*** ERROR: {op.failure.value}"
+            transcription = None
+            transcriptionVersion = None
 
         await store.setTransmissionTranscription(
             eventID=transmission.eventID,
@@ -455,6 +472,7 @@ class Indexer:
             channel=transmission.channel,
             startTime=transmission.startTime,
             transcription=transcription,
+            transcriptionVersion=transcriptionVersion,
         )
 
     async def _ensureTransmission(
