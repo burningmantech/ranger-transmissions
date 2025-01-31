@@ -26,7 +26,6 @@ from pathlib import Path
 from typing import ClassVar, TypeAlias
 
 from attrs import field, frozen
-from attrs.validators import instance_of, optional
 
 
 __all__ = ()
@@ -43,20 +42,16 @@ class Transmission:
 
     Key: ClassVar[TypeAlias] = KeyType
 
-    startTime: DateTime = field(validator=instance_of(DateTime))
-    eventID: str = field(validator=instance_of(str))
-    station: str = field(validator=instance_of(str))
-    system: str = field(validator=instance_of(str))
-    channel: str = field(validator=instance_of(str))
-    duration: TimeDelta | None = field(
-        validator=optional(instance_of(TimeDelta)), order=False
-    )
-    path: Path = field(validator=instance_of(Path))
-    sha256: str | None = field(validator=optional(instance_of(str)), order=False)
-    transcription: str | None = field(validator=optional(instance_of(str)), order=False)
-    transcriptionVersion: int | None = field(
-        validator=optional(instance_of(int)), order=False
-    )
+    startTime: DateTime
+    eventID: str
+    station: str
+    system: str
+    channel: str
+    duration: TimeDelta | None = field(order=False)
+    path: Path
+    sha256: str | None = field(order=False)
+    transcription: str | None = field(order=False)
+    transcriptionVersion: int | None = field(order=False)
 
     @property
     def endTime(self) -> DateTime | None:
