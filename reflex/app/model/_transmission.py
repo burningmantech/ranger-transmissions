@@ -11,6 +11,8 @@ class RXTransmission(Base):
 
     @classmethod
     def fromTransmission(cls, transmission: Transmission) -> Self:
+        if transmission is None:
+            return None
         return cls(
             startTime=transmission.startTime.isoformat(),
             eventID=transmission.eventID,
