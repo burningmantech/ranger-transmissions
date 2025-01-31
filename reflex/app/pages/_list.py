@@ -3,6 +3,7 @@ Transmissions Table
 """
 
 from base64 import b64encode
+from datetime import datetime as DateTime
 from pathlib import Path
 
 from reflex_ag_grid import ag_grid
@@ -20,18 +21,19 @@ from reflex import (
     cond,
     divider,
     event,
-    fragment,
     heading,
     page,
     text,
+    var,
     vstack,
 )
+from transmissions.model import Transmission
 
 
 log = Logger()
 
 
-def dataURLFromPath(path: Path, mimeType: str) -> str:
+def dataURLFromPath(path: Path, *, mimeType: str) -> str:
     with path.open("rb") as f:
         data = f.read()
     b64Text = b64encode(data).decode("utf-8")
@@ -43,37 +45,59 @@ class TransmissionsTableState(State):
     Transmissions table state.
     """
 
-    transmissions: list[RXTransmission]
+    _transmissions: dict[Transmission.Key, Transmission] = None
+    _selectedTransmissionKey: Transmission.Key | None = None
 
-    selectedTransmission: dict
-    audioURL: str = ""
+    @var(cache=True)
+    def transmissions(self) -> list[RXTransmission] | None:
+        if self._transmissions is None:
+            return None
+        return [
+            RXTransmission.fromTransmission(t) for t in self._transmissions.values()
+        ]
 
-    @event
-    async def load(self) -> None:
-        self.selectedTransmission = {}
+    @var(cache=True)
+    def selectedTransmission(self) -> RXTransmission | None:
+        if self._selectedTransmissionKey is None:
+            return None
 
-        try:
-            store = await Global.storeFactory.store()
-        except FileNotFoundError as e:
-            log.error("DB file not found: {error}", error=e)
-        else:
-            self.transmissions = [
-                RXTransmission.fromTransmission(t) for t in await store.transmissions()
-            ]
+        return RXTransmission.fromTransmission(
+            self._transmissions[self._selectedTransmissionKey]
+        )
 
-        log.info("{count} transmissions loaded", count=len(self.transmissions))
-
-    @event
-    async def rowSelected(self, event: dict) -> None:
-        tx = event["data"]
-        self.selectedTransmission = tx
+    @var(cache=True)
+    def selectedTransmissionAudioURL(self) -> str | None:
+        if self._selectedTransmissionKey is None:
+            return None
 
         # FIXME: This creates a "data:" URL containing the audio for the selected
         # recording. It works but it requires reading the audio, encoding the data
         # into a URL, and shuttling that data to the client, all of which happens
         # whether the user plays the audio or not.
         # What we should have is an endpoint for each transmission's audio.
-        self.audioURL = dataURLFromPath(Path(tx["path"]), "audio/wav")
+        transmission = self._transmissions[self._selectedTransmissionKey]
+        return dataURLFromPath(transmission.path, mimeType="audio/wav")
+
+    @event
+    async def load(self) -> None:
+        try:
+            store = await Global.storeFactory.store()
+        except FileNotFoundError as e:
+            log.error("DB file not found: {error}", error=e)
+        else:
+            self._transmissions = {t.key: t for t in await store.transmissions()}
+
+        log.info("{count} transmissions loaded", count=len(self.transmissions))
+
+    @event
+    async def rowSelected(self, event: dict) -> None:
+        transmission = event["data"]
+        self._selectedTransmissionKey = (
+            transmission["eventID"],
+            transmission["system"],
+            transmission["channel"],
+            DateTime.fromisoformat(transmission["startTime"]),
+        )
 
 
 column_defs = [
@@ -124,9 +148,6 @@ def transmissionsTable() -> Component:
         id="transmissions_table",
         row_data=TransmissionsTableState.transmissions,
         column_defs=column_defs,
-        # pagination=True,
-        # pagination_page_size=50,
-        # pagination_page_size_selector=[10, 25, 50, 100],
         on_mount=TransmissionsTableState.load,
         on_row_clicked=TransmissionsTableState.rowSelected,
         theme="alpine",
@@ -139,30 +160,29 @@ def selectedTransmissionInfo() -> Component:
     """
     Information about the selected transmission.
     """
-    tx = TransmissionsTableState.selectedTransmission
+    transmission = TransmissionsTableState.selectedTransmission
 
     return cond(
-        tx,
+        transmission,
         card(
             vstack(
                 heading("Selected Transmission", as_="h2"),
                 divider(),
                 text(
                     "Station ",
-                    code(tx.station),
+                    code(transmission.station),
                     " on channel ",
-                    code(tx.channel),
+                    code(transmission.channel),
                     " at ",
-                    text.strong(tx.startTime),
+                    text.strong(transmission.startTime),
                 ),
-                text("File: ", code(tx.path), size="1"),
-                text("SHA256: ", code(tx.sha256), size="1"),
+                text("SHA256: ", code(transmission.sha256), size="1"),
                 divider(),
                 text("Transcript:"),
-                blockquote(tx.transcription),
+                blockquote(transmission.transcription),
                 divider(),
                 audio(
-                    url=TransmissionsTableState.audioURL,
+                    url=TransmissionsTableState.selectedTransmissionAudioURL,
                     width="100%",
                     height="32px",
                 ),
@@ -170,7 +190,13 @@ def selectedTransmissionInfo() -> Component:
             ),
             width="100%",
         ),
-        fragment(),
+        card(
+            vstack(
+                text("No transmission selected"),
+                width="100%",
+            ),
+            width="100%",
+        ),
     )
 
 

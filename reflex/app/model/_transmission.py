@@ -1,4 +1,3 @@
-from pathlib import Path
 from typing import Self
 
 from reflex import Base
@@ -13,7 +12,7 @@ class RXTransmission(Base):
     @classmethod
     def fromTransmission(cls, transmission: Transmission) -> Self:
         return cls(
-            startTime=transmission.startTime.strftime("%Y-%m-%d %H:%M:%S"),
+            startTime=transmission.startTime.isoformat(),
             eventID=transmission.eventID,
             station=transmission.station,
             system=transmission.system,
@@ -21,7 +20,6 @@ class RXTransmission(Base):
             duration=(
                 transmission.duration.total_seconds() if transmission.duration else None
             ),
-            path=transmission.path,
             sha256=transmission.sha256,
             transcription=transmission.transcription,
         )
@@ -32,6 +30,5 @@ class RXTransmission(Base):
     system: str
     channel: str
     duration: float | None
-    path: Path
     sha256: str | None
     transcription: str | None
