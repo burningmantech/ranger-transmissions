@@ -13,7 +13,6 @@ import app as Global
 from app.model import RXTransmission
 from reflex import (
     Component,
-    State,
     audio,
     blockquote,
     card,
@@ -27,6 +26,7 @@ from reflex import (
     var,
     vstack,
 )
+from reflex import State as BaseState
 from transmissions.model import Transmission
 
 
@@ -40,7 +40,7 @@ def dataURLFromPath(path: Path, *, mimeType: str) -> str:
     return f"data:{mimeType};base64,{b64Text}"
 
 
-class TransmissionsTableState(State):
+class State(BaseState):
     """
     Transmissions table state.
     """
@@ -55,6 +55,12 @@ class TransmissionsTableState(State):
         return [
             RXTransmission.fromTransmission(t) for t in self._transmissions.values()
         ]
+
+    @var(cache=True)
+    def transmissionsCount(self) -> int:
+        if self._transmissions is None:
+            return 0
+        return len(self._transmissions)
 
     @var(cache=True)
     def selectedTransmission(self) -> RXTransmission | None:
@@ -146,10 +152,10 @@ def transmissionsTable() -> Component:
     """
     return ag_grid(
         id="transmissions_table",
-        row_data=TransmissionsTableState.transmissions,
+        row_data=State.transmissions,
         column_defs=column_defs,
-        on_mount=TransmissionsTableState.load,
-        on_row_clicked=TransmissionsTableState.rowSelected,
+        on_mount=State.load,
+        on_row_clicked=State.rowSelected,
         theme="alpine",
         width="100%",
         height="50vh",
@@ -160,7 +166,7 @@ def selectedTransmissionInfo() -> Component:
     """
     Information about the selected transmission.
     """
-    transmission = TransmissionsTableState.selectedTransmission
+    transmission = State.selectedTransmission
 
     return cond(
         transmission,
@@ -182,7 +188,7 @@ def selectedTransmissionInfo() -> Component:
                 blockquote(transmission.transcription),
                 divider(),
                 audio(
-                    url=TransmissionsTableState.selectedTransmissionAudioURL,
+                    url=State.selectedTransmissionAudioURL,
                     width="100%",
                     height="32px",
                 ),
@@ -208,6 +214,7 @@ def transmissionsListPage() -> Component:
     return vstack(
         heading("Transmissions List"),
         transmissionsTable(),
+        text(State.transmissionsCount, " transmissions"),
         selectedTransmissionInfo(),
         spacing="4",
         margin="1vh",
