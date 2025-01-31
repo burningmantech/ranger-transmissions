@@ -48,6 +48,12 @@ class State(BaseState):
     _transmissions: dict[Transmission.Key, Transmission] = None
     _selectedTransmissionKey: Transmission.Key | None = None
 
+    @property
+    def _selectedTransmission(self) -> Transmission | None:
+        if self._selectedTransmissionKey is None:
+            return None
+        return self._transmissions[self._selectedTransmissionKey]
+
     @var(cache=True)
     def transmissions(self) -> list[RXTransmission] | None:
         if self._transmissions is None:
@@ -64,24 +70,19 @@ class State(BaseState):
 
     @var(cache=True)
     def selectedTransmission(self) -> RXTransmission | None:
-        if self._selectedTransmissionKey is None:
-            return None
-
-        return RXTransmission.fromTransmission(
-            self._transmissions[self._selectedTransmissionKey]
-        )
+        log.info("tx={tx!r}", tx=self._selectedTransmission)
+        return RXTransmission.fromTransmission(self._selectedTransmission)
 
     @var(cache=True)
     def selectedTransmissionAudioURL(self) -> str | None:
-        if self._selectedTransmissionKey is None:
-            return None
-
         # FIXME: This creates a "data:" URL containing the audio for the selected
         # recording. It works but it requires reading the audio, encoding the data
         # into a URL, and shuttling that data to the client, all of which happens
         # whether the user plays the audio or not.
         # What we should have is an endpoint for each transmission's audio.
-        transmission = self._transmissions[self._selectedTransmissionKey]
+        transmission = self._selectedTransmission
+        if transmission is None:
+            return None
         return dataURLFromPath(transmission.path, mimeType="audio/wav")
 
     @event
