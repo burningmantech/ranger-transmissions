@@ -1,32 +1,20 @@
 """
-Transmissions Table
+Transmissions List Page State
 """
 
 from base64 import b64encode
 from datetime import datetime as DateTime
 from pathlib import Path
 
-from reflex_ag_grid import ag_grid
 from twisted.logger import Logger
 
 import app as Global
 from app.model import RXTransmission
-from reflex import (
-    Component,
-    audio,
-    blockquote,
-    card,
-    code,
-    cond,
-    divider,
-    event,
-    heading,
-    page,
-    text,
-    var,
-    vstack,
-)
 from reflex import State as BaseState
+from reflex import (
+    event,
+    var,
+)
 from transmissions.model import Transmission, TZInfo
 
 
@@ -106,112 +94,3 @@ class State(BaseState):
                 transmission["startTime"], RXTransmission.dateTimeFormat
             ).replace(tzinfo=TZInfo.PDT.value),
         )
-
-
-column_defs = [
-    ag_grid.column_def(
-        field="eventID",
-        header_name="Event",
-        initialWidth=70,
-    ),
-    ag_grid.column_def(
-        field="startTime",
-        header_name="Start Time",
-        initialWidth=180,
-    ),
-    ag_grid.column_def(
-        field="duration",
-        header_name="Duration",
-        initialWidth=80,
-    ),
-    ag_grid.column_def(
-        field="channel",
-        header_name="Channel",
-        initialWidth=150,
-    ),
-    ag_grid.column_def(
-        field="station",
-        header_name="Station",
-        initialWidth=150,
-    ),
-    ag_grid.column_def(
-        field="transcription",
-        header_name="Transcript",
-        initialWidth=800,
-    ),
-]
-
-
-def transmissionsTable() -> Component:
-    """
-    Transmissions table
-    """
-    return ag_grid(
-        id="transmissions_table",
-        row_data=State.transmissions,
-        column_defs=column_defs,
-        on_mount=State.load,
-        on_row_clicked=State.rowSelected,
-        theme="alpine",
-        width="100%",
-        height="50vh",
-    )
-
-
-def selectedTransmissionInfo() -> Component:
-    """
-    Information about the selected transmission.
-    """
-    transmission = State.selectedTransmission
-
-    return cond(
-        transmission,
-        card(
-            vstack(
-                heading("Selected Transmission", as_="h2"),
-                divider(),
-                text(
-                    "Station ",
-                    code(transmission.station),
-                    " on channel ",
-                    code(transmission.channel),
-                    " at ",
-                    text.strong(transmission.startTime),
-                ),
-                divider(),
-                text("Transcript:"),
-                blockquote(transmission.transcription),
-                divider(),
-                audio(
-                    url=State.selectedTransmissionAudioURL,
-                    width="100%",
-                    height="32px",
-                ),
-                width="100%",
-            ),
-            width="100%",
-        ),
-        card(
-            vstack(
-                text("No transmission selected"),
-                width="100%",
-            ),
-            width="100%",
-        ),
-    )
-
-
-@page(route="/", title="Transmissions List")
-def transmissionsListPage() -> Component:
-    """
-    Transmissions table page
-    """
-    return vstack(
-        heading("Transmissions List"),
-        transmissionsTable(),
-        text(State.transmissionsCount, " transmissions"),
-        selectedTransmissionInfo(),
-        spacing="4",
-        margin="1vh",
-        height="100vh",
-    )
