@@ -2,8 +2,6 @@ from collections import deque
 from collections.abc import Awaitable, Iterable
 from datetime import datetime as DateTime
 from datetime import timedelta as TimeDelta
-from datetime import timezone as TimeZone
-from enum import Enum
 from hashlib import sha256
 from os import walk
 from pathlib import Path
@@ -39,19 +37,11 @@ except ImportError:
 
 
 from transmissions.ext.parallel import runInParallel
-from transmissions.model import Event, Transmission
+from transmissions.model import Event, Transmission, TZInfo
 from transmissions.store import TXDataStore
 
 
 __all__ = ()
-
-
-class TZInfo(Enum):
-    """
-    Time zones
-    """
-
-    PDT = TimeZone(TimeDelta(hours=-7), name="Pacific Daylight Time")
 
 
 class InvalidFileError(Exception):

@@ -27,7 +27,7 @@ from reflex import (
     vstack,
 )
 from reflex import State as BaseState
-from transmissions.model import Transmission
+from transmissions.model import Transmission, TZInfo
 
 
 log = Logger()
@@ -70,7 +70,6 @@ class State(BaseState):
 
     @var(cache=True)
     def selectedTransmission(self) -> RXTransmission | None:
-        log.info("tx={tx!r}", tx=self._selectedTransmission)
         return RXTransmission.fromTransmission(self._selectedTransmission)
 
     @var(cache=True)
@@ -103,7 +102,9 @@ class State(BaseState):
             transmission["eventID"],
             transmission["system"],
             transmission["channel"],
-            DateTime.fromisoformat(transmission["startTime"]),
+            DateTime.strptime(
+                transmission["startTime"], RXTransmission.dateTimeFormat
+            ).replace(tzinfo=TZInfo.PDT.value),
         )
 
 
@@ -111,38 +112,32 @@ column_defs = [
     ag_grid.column_def(
         field="eventID",
         header_name="Event",
-        filter=ag_grid.filters.text,
         initialWidth=70,
     ),
     ag_grid.column_def(
         field="startTime",
         header_name="Start Time",
-        filter=ag_grid.filters.text,
-        initialWidth=185,
+        initialWidth=180,
     ),
     ag_grid.column_def(
         field="duration",
         header_name="Duration",
-        filter=ag_grid.filters.number,
         initialWidth=80,
     ),
     ag_grid.column_def(
         field="channel",
         header_name="Channel",
-        filter=ag_grid.filters.text,
         initialWidth=150,
     ),
     ag_grid.column_def(
         field="station",
         header_name="Station",
-        filter=ag_grid.filters.text,
         initialWidth=150,
     ),
     ag_grid.column_def(
         field="transcription",
         header_name="Transcript",
-        filter=ag_grid.filters.text,
-        initialWidth=5000,
+        initialWidth=800,
     ),
 ]
 
@@ -183,7 +178,6 @@ def selectedTransmissionInfo() -> Component:
                     " at ",
                     text.strong(transmission.startTime),
                 ),
-                text("SHA256: ", code(transmission.sha256), size="1"),
                 divider(),
                 text("Transcript:"),
                 blockquote(transmission.transcription),

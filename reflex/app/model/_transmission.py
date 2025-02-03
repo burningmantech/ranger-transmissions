@@ -1,7 +1,7 @@
-from typing import Self
+from typing import ClassVar, Self
 
 from reflex import Base
-from transmissions.model import Transmission
+from transmissions.model import Transmission, TZInfo
 
 
 class RXTransmission(Base):
@@ -9,12 +9,16 @@ class RXTransmission(Base):
     Reflex model for Transmission
     """
 
+    dateTimeFormat: ClassVar[str] = "%y-%m-%d %H:%M:%S%z"
+
     @classmethod
     def fromTransmission(cls, transmission: Transmission) -> Self:
         if transmission is None:
             return None
         return cls(
-            startTime=transmission.startTime.isoformat(),
+            startTime=transmission.startTime.astimezone(TZInfo.PDT.value).strftime(
+                cls.dateTimeFormat
+            ),
             eventID=transmission.eventID,
             station=transmission.station,
             system=transmission.system,
@@ -22,7 +26,6 @@ class RXTransmission(Base):
             duration=(
                 transmission.duration.total_seconds() if transmission.duration else None
             ),
-            sha256=transmission.sha256,
             transcription=transmission.transcription,
         )
 
@@ -32,5 +35,4 @@ class RXTransmission(Base):
     system: str
     channel: str
     duration: float | None
-    sha256: str | None
     transcription: str | None
