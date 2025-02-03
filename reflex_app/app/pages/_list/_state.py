@@ -6,16 +6,17 @@ from base64 import b64encode
 from datetime import datetime as DateTime
 from pathlib import Path
 
-from twisted.logger import Logger
-
-import app as Global
-from app.model import RXTransmission
 from reflex import State as BaseState
 from reflex import (
     event,
     var,
 )
+from twisted.logger import Logger
+
+import app as Global
+from app.model import RXTransmission
 from transmissions.model import Transmission, TZInfo
+from transmissions.search import TransmissionsIndex
 
 
 log = Logger()
@@ -33,11 +34,13 @@ class State(BaseState):
     Transmissions table state.
     """
 
-    _transmissions: dict[Transmission.Key, Transmission] = None
+    _index: TransmissionsIndex | None = None
+    _transmissions: dict[Transmission.Key, Transmission] | None = None
     _selectedTransmissionKey: Transmission.Key | None = None
 
     @property
     def _selectedTransmission(self) -> Transmission | None:
+        assert self._transmissions is not None
         if self._selectedTransmissionKey is None:
             return None
         return self._transmissions[self._selectedTransmissionKey]
@@ -78,8 +81,11 @@ class State(BaseState):
             store = await Global.storeFactory.store()
         except FileNotFoundError as e:
             log.error("DB file not found: {error}", error=e)
-        else:
-            self._transmissions = {t.key: t for t in await store.transmissions()}
+            return
+
+        self._index = await Global.searchIndexFactory.index(store)
+
+        self._transmissions = {t.key: t for t in await store.transmissions()}
 
         log.info("{count} transmissions loaded", count=len(self.transmissions))
 

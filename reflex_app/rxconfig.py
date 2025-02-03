@@ -4,9 +4,9 @@
 Reflex configuration
 """
 
-import reflex as rx
+from reflex import Config
 
 
-config = rx.Config(
+config = Config(
     app_name="app",
 )

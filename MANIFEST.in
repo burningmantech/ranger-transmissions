@@ -1,4 +1,4 @@
-exclude reflex/data
+exclude reflex_app/data
 include .coveragerc
 include .pre-commit-config.yaml
 include codecov.yml
@@ -7,8 +7,9 @@ include COPYRIGHT.txt
 include LICENSE.txt
 include mypy.ini
 include pyproject.toml
-include reflex/assets/favicon.ico
+include reflex_app/assets/favicon.ico
+include src/transmissions/py.typed
 include src/transmissions/store/sqlite/schema/*.sqlite
 include tox.ini
 include uv.lock
-recursive-include reflex *.py
+recursive-include reflex_app *.py

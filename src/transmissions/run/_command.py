@@ -338,11 +338,10 @@ def transmissions(ctx: Context, search: str) -> None:
     """
 
     async def app(store: TXDataStore) -> None:
-        searchIndex = await searchIndexFactoryFromContext(ctx)(store)
-
         transmissionsByKey = {t.key: t for t in await store.transmissions()}
 
         if search:
+            searchIndex = await searchIndexFactoryFromContext(ctx)(store)
             transmissions: Iterable[Transmission] = [
                 transmissionsByKey[key] async for key in searchIndex.search(search)
             ]
