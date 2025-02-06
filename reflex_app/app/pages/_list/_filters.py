@@ -15,24 +15,33 @@ def transmissionsFilters() -> Component:
         form(
             vstack(
                 hstack(
-                    select(
-                        State.events,
-                        value=State.selectedEvent,
-                        on_change=State.eventSelected,
-                        label="Event",
+                    form.field(
+                        form.label("Event"),
+                        select(
+                            State.events,
+                            value=State.selectedEvent,
+                            on_change=State.eventSelected,
+                            label="Event",
+                        ),
                     ),
-                    input(
-                        type="datetime-local",
-                        name="start_time",
-                        placeholder="Start Time",
-                        value=State.startTime,
-                        on_change=State.startTimeEdited,
+                    form.field(
+                        form.label("Start"),
+                        input(
+                            type="datetime-local",
+                            name="start_time",
+                            placeholder="Start Time",
+                            value=State.startTime,
+                            on_change=State.startTimeEdited,
+                        ),
                     ),
-                    input(
-                        type="datetime-local",
-                        name="end_time",
-                        value=State.endTime,
-                        on_change=State.endTimeEdited,
+                    form.field(
+                        form.label("End"),
+                        input(
+                            type="datetime-local",
+                            name="end_time",
+                            value=State.endTime,
+                            on_change=State.endTimeEdited,
+                        ),
                     ),
                 ),
                 input(
