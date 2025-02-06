@@ -62,7 +62,7 @@ queries = Queries(
         """
         select
             EVENT, STATION, SYSTEM, CHANNEL, START_TIME, DURATION,
-            FILE_NAME, SHA256, TRANSCRIPTION
+            FILE_NAME, SHA256, TRANSCRIPTION, TRANSCRIPTION_VERSION
         from TRANSMISSION
         """,
     ),
@@ -71,7 +71,7 @@ queries = Queries(
         """
         select
             EVENT, STATION, SYSTEM, CHANNEL, START_TIME, DURATION,
-            FILE_NAME, SHA256, TRANSCRIPTION
+            FILE_NAME, SHA256, TRANSCRIPTION, TRANSCRIPTION_VERSION
         from TRANSMISSION
         where
             EVENT = :eventID and SYSTEM = :system and CHANNEL = :channel and
@@ -83,10 +83,10 @@ queries = Queries(
         """
         insert into TRANSMISSION (
             EVENT, STATION, SYSTEM, CHANNEL, START_TIME, DURATION,
-            FILE_NAME, SHA256, TRANSCRIPTION
+            FILE_NAME, SHA256, TRANSCRIPTION, TRANSCRIPTION_VERSION
         ) values (
             :eventID, :station, :system, :channel, :startTime, :duration,
-            :fileName, :sha256, :transcription
+            :fileName, :sha256, :transcription, :transcriptionVersion
         )
         """,
     ),
@@ -101,5 +101,9 @@ queries = Queries(
     setTransmission_transcription=Query(
         "set transmission transcription",
         template_setTransmissionAttribute.format(column="TRANSCRIPTION"),
+    ),
+    setTransmission_transcriptionVersion=Query(
+        "set transmission transcription",
+        template_setTransmissionAttribute.format(column="TRANSCRIPTION_VERSION"),
     ),
 )

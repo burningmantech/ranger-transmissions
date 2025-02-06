@@ -10,5 +10,7 @@ __pycache__/
 /dist/
 /htmlcov/
 /htmldocs/
+/reflex_app/.web/
+/rtx.sqlite
 /src/*.egg-info/
 /wheels/
