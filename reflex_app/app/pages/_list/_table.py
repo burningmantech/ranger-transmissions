@@ -2,20 +2,13 @@
 Transmissions List Table
 """
 
-from reflex import (
-    Component,
-)
+from reflex import Component
 from reflex_ag_grid import ag_grid
 
 from ._state import State
 
 
 column_defs = [
-    ag_grid.column_def(
-        field="eventID",
-        header_name="Event",
-        initialWidth=70,
-    ),
     ag_grid.column_def(
         field="startTime",
         header_name="Start Time",

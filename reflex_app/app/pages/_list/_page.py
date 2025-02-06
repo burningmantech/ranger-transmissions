@@ -2,14 +2,9 @@
 Transmissions List page
 """
 
-from reflex import (
-    Component,
-    heading,
-    page,
-    text,
-    vstack,
-)
+from reflex import Component, cond, heading, page, text, vstack
 
+from ._filters import transmissionsFilters
 from ._info import selectedTransmissionInfo
 from ._state import State
 from ._table import transmissionsTable
@@ -27,8 +22,18 @@ def transmissionsListPage() -> Component:
     """
     return vstack(
         heading("Transmissions List"),
+        transmissionsFilters(),
         transmissionsTable(),
-        text(State.transmissionsCount, " transmissions"),
+        cond(
+            State.transmissions,
+            text(
+                "Displaying ",
+                State.transmissions.length(),
+                " of ",
+                State.transmissionsCount,
+                " transmissions",
+            ),
+        ),
         selectedTransmissionInfo(),
         spacing="4",
         margin="1vh",
