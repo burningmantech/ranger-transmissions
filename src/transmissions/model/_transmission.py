@@ -69,3 +69,8 @@ class Transmission:
             f" [{self.system}: {self.channel}]"
             f" {self.station}: {self.transcription}"
         )
+
+    def isInRange(self, startTime: DateTime | None, endTime: DateTime | None) -> bool:
+        return (
+            startTime is None or self.endTime is None or self.endTime >= startTime
+        ) and (endTime is None or self.startTime <= endTime)

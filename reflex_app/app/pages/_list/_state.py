@@ -68,20 +68,9 @@ class State(BaseState):
         return self._transmissions[self._selectedTransmissionKey]
 
     def _filterTransmission(self, transmission: Transmission) -> bool:
-        if transmission.eventID != self._selectedEvent:
-            return False
-
-        if self._startTime is not None:
-            if transmission.endTime is None:
-                if transmission.startTime < self._startTime:
-                    return False
-            elif transmission.endTime < self._startTime:
-                return False
-
-        if self._endTime is not None and transmission.startTime > self._endTime:  # noqa: SIM103
-            return False
-
-        return True
+        return transmission.eventID == self._selectedEvent and transmission.isInRange(
+            self._startTime, self._endTime
+        )
 
     @var(cache=True)
     def events(self) -> list[str]:

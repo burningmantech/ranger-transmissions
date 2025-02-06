@@ -15,9 +15,8 @@ from click import (
     pass_context,
     version_option,
 )
-from click import (
-    Path as ClickPath,
-)
+from click import DateTime as ClickDateTime
+from click import Path as ClickPath
 from rich.box import DOUBLE_EDGE as RICH_DOUBLE_EDGE
 from rich.console import Console as RichConsole
 from rich.table import Table as RichTable
@@ -33,7 +32,7 @@ from twisted.web.server import Site
 from transmissions.ext.click import readConfig
 from transmissions.ext.logger import startLogging
 from transmissions.indexer import Indexer
-from transmissions.model import Event, Transmission
+from transmissions.model import Event, Transmission, TZInfo
 from transmissions.store import TXDataStore
 from transmissions.tui import Application as TUIApplication
 
@@ -45,6 +44,14 @@ __all__ = ()
 
 
 log = Logger()
+
+dateTimeFormats = (
+    "%Y-%m-%d",
+    "%Y-%m-%dT%H:%M:%S",
+    "%Y-%m-%d %H:%M:%S",
+    "%Y-%m-%dT%H:%M",
+    "%Y-%m-%d %H:%M",
+)
 
 
 @frozen(kw_only=True)
@@ -331,24 +338,55 @@ def events(ctx: Context) -> None:
     required=False,
     default="",
 )
+@option(
+    "--start",
+    help="Filter output to transmissions starting after the given time.",
+    type=ClickDateTime(formats=(dateTimeFormats)),
+    metavar="<YYYY-MM-DDTHH:MM>",
+    prompt=False,
+    required=False,
+    default=None,
+)
+@option(
+    "--end",
+    help="Filter output to transmissions ending before the given time.",
+    type=ClickDateTime(formats=(dateTimeFormats)),
+    metavar="<YYYY-MM-DDTHH:MM>",
+    prompt=False,
+    required=False,
+    default=None,
+)
 @pass_context
-def transmissions(ctx: Context, search: str) -> None:
+def transmissions(
+    ctx: Context, search: str, start: DateTime | None, end: DateTime | None
+) -> None:
     """
     List transmissions.
     """
+
+    if start is not None:
+        start = start.replace(tzinfo=TZInfo.PDT.value)
+    if end is not None:
+        end = end.replace(tzinfo=TZInfo.PDT.value)
 
     async def app(store: TXDataStore) -> None:
         transmissionsByKey = {t.key: t for t in await store.transmissions()}
 
         if search:
             searchIndex = await searchIndexFactoryFromContext(ctx)(store)
-            transmissions: Iterable[Transmission] = [
-                transmissionsByKey[key] async for key in searchIndex.search(search)
-            ]
+            transmissions: Iterable[Transmission] = sorted(
+                [
+                    transmissionsByKey[key]
+                    async for key in searchIndex.search(search)
+                    if transmissionsByKey[key].isInRange(start, end)
+                ]
+            )
         else:
-            transmissions = transmissionsByKey.values()
+            transmissions = sorted(
+                tx for tx in transmissionsByKey.values() if tx.isInRange(start, end)
+            )
 
-        printTransmissions(sorted(transmissions))
+        printTransmissions(transmissions)
 
     run(ctx, app)
 
