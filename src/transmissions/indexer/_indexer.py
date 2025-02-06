@@ -508,14 +508,21 @@ class Indexer:
 
             transmission = existingTransmission
 
+        def addTask(task: Awaitable[Any]) -> None:
+            async def wrapper() -> Any:
+                with self.log.failuresHandled("Subtask failed:"):
+                    return await task
+
+            taskQueue.append(wrapper())
+
         if computeChecksum and transmission.sha256 is None:
-            taskQueue.append(self._addSignature(store, transmission))
+            addTask(self._addSignature(store, transmission))
 
         if computeDuration and transmission.duration is None:
-            taskQueue.append(self._addDuration(store, transmission))
+            addTask(self._addDuration(store, transmission))
 
         if computeTranscription and transmission.transcription is None:
-            taskQueue.append(self._addTranscription(store, transmission))
+            addTask(self._addTranscription(store, transmission))
 
     async def indexIntoStore(
         self,
