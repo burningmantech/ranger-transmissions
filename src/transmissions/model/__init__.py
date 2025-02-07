@@ -19,10 +19,12 @@ Radio transmission data model
 """
 
 from ._event import Event
+from ._time import TZInfo
 from ._transmission import Transmission
 
 
 __all__ = (
     "Event",
+    "TZInfo",
     "Transmission",
 )

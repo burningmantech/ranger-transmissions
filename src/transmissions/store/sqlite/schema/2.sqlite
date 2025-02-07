@@ -1,0 +1,30 @@
+create table SCHEMA_INFO (
+    VERSION integer not null
+);
+
+insert into SCHEMA_INFO (VERSION) values (1);
+
+
+create table EVENT (
+    ID   text not null,
+    NAME text not null,
+
+    primary key (ID)
+);
+
+
+create table TRANSMISSION (
+    EVENT                 text not null,
+    STATION               text not null,
+    SYSTEM                text not null,
+    CHANNEL               text not null,
+    START_TIME            real not null,
+    DURATION              real,
+    FILE_NAME             text not null,
+    SHA256                text,
+    TRANSCRIPTION         text,
+    TRANSCRIPTION_VERSION int,
+
+    foreign key (EVENT) references EVENT(ID),
+    primary key (EVENT, SYSTEM, CHANNEL, START_TIME)
+);
