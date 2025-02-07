@@ -1,11 +1,14 @@
 from collections.abc import Awaitable, Callable, Iterable
+from csv import writer as csvWriter
 from datetime import datetime as DateTime
 from pathlib import Path
+from sys import stdout
 from typing import Any, cast
 
 import click
 from arrow import get as makeArrow
 from attrs import frozen
+from click import Choice as ClickChoice
 from click import (
     Context,
     Group,
@@ -192,7 +195,7 @@ def printEvents(events: Iterable[Event]) -> None:
     console.print(table)
 
 
-def printTransmissions(transmissions: Iterable[Transmission]) -> None:
+def printTransmissionsRich(transmissions: Iterable[Transmission]) -> None:
     console = RichConsole()
 
     table = RichTable(show_header=True, box=RICH_DOUBLE_EDGE)
@@ -202,7 +205,7 @@ def printTransmissions(transmissions: Iterable[Transmission]) -> None:
     table.add_column("Channel")
     table.add_column("Start")
     table.add_column("Duration")
-    table.add_column("Text")
+    table.add_column("Transcription")
 
     unknown = "…"
 
@@ -232,6 +235,33 @@ def printTransmissions(transmissions: Iterable[Transmission]) -> None:
         )
 
     console.print(table)
+
+
+def printTransmissionsCSV(transmissions: Iterable[Transmission]) -> None:
+    writer = csvWriter(stdout)
+    writer.writerow(
+        (
+            "Event",
+            "Station",
+            "System",
+            "Channel",
+            "Start",
+            "Duration",
+            "Transcription",
+        )
+    )
+    for transmission in transmissions:
+        writer.writerow(
+            (
+                transmission.eventID,
+                transmission.station,
+                transmission.system,
+                transmission.channel,
+                transmission.startTime,
+                transmission.duration,
+                transmission.transcription,
+            )
+        )
 
 
 @group(cls=groupClassWithConfigParam("config"))
@@ -356,9 +386,17 @@ def events(ctx: Context) -> None:
     required=False,
     default=None,
 )
+@option(
+    "--format",
+    help="Output format.",
+    type=ClickChoice(["text", "csv"]),
+    prompt=False,
+    required=False,
+    default="text",
+)
 @pass_context
 def transmissions(
-    ctx: Context, search: str, start: DateTime | None, end: DateTime | None
+    ctx: Context, search: str, start: DateTime | None, end: DateTime | None, format: str
 ) -> None:
     """
     List transmissions.
@@ -386,7 +424,12 @@ def transmissions(
                 tx for tx in transmissionsByKey.values() if tx.isInRange(start, end)
             )
 
-        printTransmissions(transmissions)
+        if format == "text":
+            printTransmissionsRich(transmissions)
+        elif format == "csv":
+            printTransmissionsCSV(transmissions)
+        else:
+            raise AssertionError(f"Unknown format: {format}")
 
     run(ctx, app)
 
