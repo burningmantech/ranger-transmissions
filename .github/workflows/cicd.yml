@@ -22,7 +22,7 @@ jobs:
     steps:
 
       - name: Harden CI
-        uses: step-security/harden-runner@v2.10.4
+        uses: step-security/harden-runner@v2.11.0
         with:
           disable-sudo: true
           disable-file-monitoring: true
@@ -64,7 +64,7 @@ jobs:
     steps:
 
       - name: Harden CI
-        uses: step-security/harden-runner@v2.10.4
+        uses: step-security/harden-runner@v2.11.0
         with:
           disable-sudo: true
           disable-file-monitoring: true
@@ -100,7 +100,7 @@ jobs:
     steps:
 
       - name: Harden CI
-        uses: step-security/harden-runner@v2.10.4
+        uses: step-security/harden-runner@v2.11.0
         with:
           disable-sudo: true
           egress-policy: block
@@ -151,7 +151,7 @@ jobs:
     steps:
 
       - name: Harden CI
-        uses: step-security/harden-runner@v2.10.4
+        uses: step-security/harden-runner@v2.11.0
         with:
           disable-sudo: true
           egress-policy: block
