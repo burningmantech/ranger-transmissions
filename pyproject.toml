@@ -75,7 +75,7 @@ mypy = [
 ]
 packaging = [
     "pip",
-    "twine==5.1.1",
+    "twine==6.2.0",
 ]
 
 
