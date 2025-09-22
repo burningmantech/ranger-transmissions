@@ -65,7 +65,7 @@ lint = [
     "pre-commit==4.0.1",
 ]
 unit = [
-    "coverage==7.6.10",
+    "coverage==7.10.7",
     "hypothesis==6.112.4",
 ]
 mypy = [
