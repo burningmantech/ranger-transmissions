@@ -17,7 +17,7 @@ dependencies = [
     "attrs==25.1.0",
     "audioop-lts==0.2.1; python_version>='3.13'",  # Requred by pydub; formerly in stdlib
     "cattrs==24.1.2",
-    "click==8.1.8",
+    "click==8.3.0",
     "klein==24.8.0",
     "openai-whisper==20240930; sys_platform!='darwin' or platform_machine!='x86_64'",
     "pydub==0.25.1",
