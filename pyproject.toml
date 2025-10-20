@@ -22,7 +22,7 @@ dependencies = [
     "openai-whisper==20240930; sys_platform!='darwin' or platform_machine!='x86_64'",
     "pydub==0.25.1",
     "pyobjc==11.0; sys_platform=='darwin'",
-    "reflex==0.6.8",
+    "reflex==0.8.15",
     "reflex-ag-grid==0.0.10",
     "rich==13.9.4",
     "simpleaudio==1.0.4; sys_platform=='darwin'",
