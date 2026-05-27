@@ -4,6 +4,7 @@ include .pre-commit-config.yaml
 include codecov.yml
 include conf/rtx-sample.toml
 include COPYRIGHT.txt
+include justfile
 include LICENSE.txt
 include mypy.ini
 include pyproject.toml
