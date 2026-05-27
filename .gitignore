@@ -3,7 +3,6 @@ __pycache__/
 /.coverage
 /.hypothesis/
 /.ruff_cache
-/.tox/
 /.venv/
 /build/
 /cached/

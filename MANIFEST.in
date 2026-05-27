@@ -11,6 +11,5 @@ include pyproject.toml
 include reflex_app/assets/favicon.ico
 include src/transmissions/py.typed
 include src/transmissions/store/sqlite/schema/*.sqlite
-include tox.ini
 include uv.lock
 recursive-include reflex_app *.py
