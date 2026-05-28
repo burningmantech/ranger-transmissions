@@ -45,8 +45,11 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v5
 
+      - name: Install just
+        uses: extractions/setup-just@v3
+
       - name: Run Linters
-        run: uv tool run just lint
+        run: just lint
         env:
           # no-commit-to-branch always fails in CI, because this pre-commit
           # is only designed for running locally (i.e. when committing to a
@@ -87,8 +90,11 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v5
 
+      - name: Install just
+        uses: extractions/setup-just@v3
+
       - name: Run Mypy
-        run: uv tool run just mypy
+        run: just mypy
 
 
   packaging:
@@ -122,8 +128,11 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v5
 
+      - name: Install just
+        uses: extractions/setup-just@v3
+
       - name: Check packaging
-        run: uv tool run just packaging
+        run: just packaging
 
 
   unit:
@@ -179,11 +188,14 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v5
 
+      - name: Install just
+        uses: extractions/setup-just@v3
+
       - name: Run unit tests
         id: test
         run: |
           status=0
-          uv tool run just "${{ matrix.test-recipe }}" || status=$?
+          just "${{ matrix.test-recipe }}" || status=$?
           if [ ${status} -ne 0 ] && [ "${{ matrix.optional }}" == "true" ]; then
             echo "::warning::Optional matrix job failed."
             echo "optional_fail=true" >> "${GITHUB_OUTPUT}"
