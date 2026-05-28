@@ -30,3 +30,15 @@ packaging:
     uv run --group=packaging twine check dist/*
 
 doit: lint mypy coverage
+
+serve:
+    uv run rtx web
+
+_http *args:
+    uvx --from httpie http {{args}}
+
+request path="" *args:
+    @just _http {{args}} http://localhost:8080/{{path}}
+
+browser:
+    uv run -m webbrowser -t http://localhost:8080/
