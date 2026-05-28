@@ -5,7 +5,7 @@
 [project]
 
 name = "ranger-transmissions"
-dynamic = ["version"]
+version = "0.0.0"
 description = "Ranger radio transmissions viewer"
 readme = "README.rst"
 license = {file = "LICENSE.txt"}
@@ -19,7 +19,7 @@ dependencies = [
     "cattrs==24.1.2",
     "click==8.1.8",
     "klein==24.8.0",
-    "openai-whisper==20240930; sys_platform!='darwin' or platform_machine!='x86_64'",
+    "openai-whisper==20250625; sys_platform!='darwin' or platform_machine!='x86_64'",
     "pydub==0.25.1",
     "pyobjc==11.0; sys_platform=='darwin'",
     "reflex==0.6.8",
@@ -75,12 +75,11 @@ mypy = [
 ]
 packaging = [
     "pip",
-    "twine==5.1.1",
+    "twine==6.2.0",
 ]
 
 
 [build-system]
-
 requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
@@ -90,12 +89,10 @@ build-backend = "setuptools.build_meta"
 ##
 
 [tool.ruff.format]
-
 # skip-magic-trailing-comma = true
 
 
 [tool.ruff.lint]
-
 select = ["ALL"]
 ignore = [
     "A001",     # Variable `min` is shadowing a Python builtin
@@ -158,17 +155,12 @@ ignore = [
 ]
 
 [tool.ruff.lint.isort]
-
 lines-after-imports = 2
 
 
 ##
 # Setuptools
 ##
-
-[tool.setuptools.dynamic]
-version = {attr = "transmissions.__version__"}
-
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -179,5 +171,4 @@ where = ["src"]
 ##
 
 [tool.uv]
-
 default-groups = []
