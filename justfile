@@ -23,3 +23,5 @@ coverage_report:
 packaging:
     uv run --group=packaging pip wheel --no-deps --wheel-dir=dist .
     uv run --group=packaging twine check dist/*
+
+doit: lint mypy coverage
