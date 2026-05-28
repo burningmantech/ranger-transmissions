@@ -62,7 +62,7 @@ Changelog = "https://github.com/burningmantech/ranger-transmissions/blob/master/
 
 [dependency-groups]
 lint = [
-    "pre-commit==4.0.1",
+    "pre-commit==4.3.0",
 ]
 unit = [
     "coverage==7.6.10",
