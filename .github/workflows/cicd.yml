@@ -35,7 +35,7 @@ jobs:
             pypi.org:443
 
       - name: Checkout source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install Python
         uses: actions/setup-python@v6
@@ -80,7 +80,7 @@ jobs:
             pypi.org:443
 
       - name: Checkout source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install Python
         uses: actions/setup-python@v6
@@ -118,7 +118,7 @@ jobs:
   #           pypi.org:443
 
   #     - name: Checkout source code
-  #       uses: actions/checkout@v4
+  #       uses: actions/checkout@v6
 
   #     - name: Install Python
   #       uses: actions/setup-python@v6
@@ -176,7 +176,7 @@ jobs:
             storage.googleapis.com:443
 
       - name: Checkout source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 2
 
