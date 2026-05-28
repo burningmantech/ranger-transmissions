@@ -43,7 +43,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v7
 
       - name: Install just
         uses: extractions/setup-just@v3
@@ -88,7 +88,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v7
 
       - name: Install just
         uses: extractions/setup-just@v3
@@ -126,7 +126,7 @@ jobs:
   #         python-version: "3.12"
 
   #     - name: Install uv
-  #       uses: astral-sh/setup-uv@v5
+  #       uses: astral-sh/setup-uv@v7
 
   #     - name: Install just
   #       uses: extractions/setup-just@v3
@@ -186,7 +186,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v7
 
       - name: Install just
         uses: extractions/setup-just@v3
