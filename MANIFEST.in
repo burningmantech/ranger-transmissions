@@ -4,12 +4,12 @@ include .pre-commit-config.yaml
 include codecov.yml
 include conf/rtx-sample.toml
 include COPYRIGHT.txt
+include justfile
 include LICENSE.txt
 include mypy.ini
 include pyproject.toml
 include reflex_app/assets/favicon.ico
 include src/transmissions/py.typed
 include src/transmissions/store/sqlite/schema/*.sqlite
-include tox.ini
 include uv.lock
 recursive-include reflex_app *.py
