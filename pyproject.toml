@@ -19,7 +19,7 @@ dependencies = [
     "cattrs==24.1.2",
     "click==8.1.8",
     "klein==24.8.0",
-    "openai-whisper==20240930; sys_platform!='darwin' or platform_machine!='x86_64'",
+    "openai-whisper==20250625; sys_platform!='darwin' or platform_machine!='x86_64'",
     "pydub==0.25.1",
     "pyobjc==11.0; sys_platform=='darwin'",
     "reflex==0.6.8",
@@ -30,9 +30,6 @@ dependencies = [
     "Twisted==24.11.0",
     "Whoosh-Reloaded==2.7.5",
 ]
-
-[tool.uv.extra-build-dependencies]
-openai-whisper = ["setuptools"]  # Borked in 20240930
 
 # Authors/maintainers
 authors = [
