@@ -6,7 +6,6 @@ source = transmission
 [paths]
 source=
    src/transmission
-   .tox/py*/**/site-packages
 
 [report]
 exclude_lines =
