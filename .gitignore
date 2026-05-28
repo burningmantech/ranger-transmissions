@@ -1,11 +1,13 @@
 __pycache__/
+/_trial_temp/
+/.coverage
 /.hypothesis/
 /.ruff_cache
-/.tox/
 /.venv/
 /build/
 /cached/
 /conf/rtx.toml
+/coverage.xml
 /data/
 /dist/
 /htmlcov/
