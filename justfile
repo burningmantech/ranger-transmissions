@@ -2,7 +2,7 @@ default:
   @just --list
 
 lint:
-    pre-commit run --all-files
+    uv run --group=lint pre-commit run --all-files
 
 mypy TARGET="src":
     uv run --group=mypy mypy "{{TARGET}}"
