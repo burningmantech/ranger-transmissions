@@ -31,6 +31,9 @@ dependencies = [
     "Whoosh-Reloaded==2.7.5",
 ]
 
+[tool.uv.extra-build-dependencies]
+openai-whisper = ["pkg_resources"]  # Borked in 20240930
+
 # Authors/maintainers
 authors = [
     {name="Wilfredo Sánchez Vega", email="tool@burningman.org"},
