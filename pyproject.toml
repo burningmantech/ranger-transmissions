@@ -8,7 +8,7 @@ name = "ranger-transmissions"
 version = "0.0.0"
 description = "Ranger radio transmissions viewer"
 readme = "README.rst"
-license = {file = "LICENSE.txt"}
+license = "Apache-2.0"
 
 # Requirements
 requires-python = ">=3.12,<3.13"
@@ -41,7 +41,6 @@ maintainers = [
 
 # Search metadata
 classifiers = [
-    "License :: OSI Approved :: Apache Software License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3.12",
 ]
