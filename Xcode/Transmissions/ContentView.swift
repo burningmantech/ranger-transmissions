@@ -40,6 +40,7 @@ struct ContentView: View {
 
     var body: some View {
         VStack {
+            TransmissionSearchBarView(searchText: $searchText)
             TransmissionTableView(
                 searchText: $searchText,
             )
@@ -95,16 +96,43 @@ struct TransmissionTableView: View {
         ),
     ]
 
+    var filteredTransmissions: [Transmission] {
+        let sorted = transmissions.sorted(using: sortOrder)
+        guard !searchText.isEmpty else { return sorted }
+        return sorted.filter { transmission in
+            transmission.eventID.localizedCaseInsensitiveContains(searchText)
+                || transmission.station.localizedCaseInsensitiveContains(searchText)
+                || transmission.system.localizedCaseInsensitiveContains(searchText)
+                || transmission.channel.localizedCaseInsensitiveContains(searchText)
+                || transmission.transcription.orEmpty.localizedCaseInsensitiveContains(searchText)
+        }
+    }
+
     var body: some View {
-        Table(transmissions.sorted(using: sortOrder), sortOrder: $sortOrder) {
-            TableColumn("Time", value: \.startTime) { transmission in
-                Text(transmission.startTime.description)
+        VStack {
+            Table(filteredTransmissions, sortOrder: $sortOrder) {
+                TableColumn("Time", value: \.startTime) { transmission in
+                    Text(transmission.startTime.description)
+                }
+                TableColumn("Event ID", value: \.eventID)
+                TableColumn("Station", value: \.station)
+                TableColumn("System", value: \.system)
+                TableColumn("Channel", value: \.channel)
+                TableColumn("Transcript", value: \.transcription.orEmpty)
             }
-            TableColumn("Event ID", value: \.eventID)
-            TableColumn("Station", value: \.station)
-            TableColumn("System", value: \.system)
-            TableColumn("Channel", value: \.channel)
-            TableColumn("Transcript", value: \.transcription.orEmpty)
+        }
+    }
+}
+
+struct TransmissionSearchBarView: View {
+    @Binding var searchText: String
+
+    var body: some View {
+        HStack {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(.secondary)
+            TextField("Search transmissions", text: $searchText)
+                .textFieldStyle(.roundedBorder)
         }
     }
 }
