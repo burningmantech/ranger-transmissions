@@ -37,25 +37,7 @@ struct Transmission: Identifiable {
 
 struct ContentView: View {
     @State private var searchText: String = ""
-
-    var body: some View {
-        VStack {
-            TransmissionSearchBarView(searchText: $searchText)
-            TransmissionTableView(
-                searchText: $searchText,
-            )
-            TransmissionDetailsView()
-        }
-        .padding()
-    }
-}
-
-struct TransmissionTableView: View {
-    @Binding var searchText: String
-
-    @State private var sortOrder: [KeyPathComparator<Transmission>] = [
-        KeyPathComparator(\.startTime)
-    ]
+    @State private var selectedTransmissionID: Transmission.ID?
 
     let transmissions: [Transmission] = [
         Transmission(
@@ -96,6 +78,35 @@ struct TransmissionTableView: View {
         ),
     ]
 
+    var selectedTransmission: Transmission? {
+        guard let selectedTransmissionID else { return nil }
+        return transmissions.first { $0.id == selectedTransmissionID }
+    }
+
+    var body: some View {
+        VStack {
+            TransmissionSearchBarView(searchText: $searchText)
+            TransmissionTableView(
+                transmissions: transmissions,
+                searchText: $searchText,
+                selectedTransmissionID: $selectedTransmissionID,
+            )
+            TransmissionDetailsView(transmission: selectedTransmission)
+        }
+        .padding()
+    }
+}
+
+struct TransmissionTableView: View {
+    let transmissions: [Transmission]
+
+    @Binding var searchText: String
+    @Binding var selectedTransmissionID: Transmission.ID?
+
+    @State private var sortOrder: [KeyPathComparator<Transmission>] = [
+        KeyPathComparator(\.startTime)
+    ]
+
     var filteredTransmissions: [Transmission] {
         let sorted = transmissions.sorted(using: sortOrder)
         guard !searchText.isEmpty else { return sorted }
@@ -116,7 +127,7 @@ struct TransmissionTableView: View {
 
     var body: some View {
         VStack {
-            Table(filteredTransmissions, sortOrder: $sortOrder) {
+            Table(filteredTransmissions, selection: $selectedTransmissionID, sortOrder: $sortOrder) {
                 TableColumn("Event ID", value: \.eventID)
                 TableColumn("Time", value: \.startTime) { transmission in
                     Text(dateFormatter.string(from: transmission.startTime))
@@ -144,8 +155,22 @@ struct TransmissionSearchBarView: View {
 }
 
 struct TransmissionDetailsView: View {
+    let transmission: Transmission?
+
     var body: some View {
-        Text("Transmission Details")
+        if let transmission {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Transmission Details:")
+                    .font(.headline)
+                Text("\(transmission.eventID) — \(transmission.startTime)")
+                Text("\(transmission.station) on system \(transmission.system) channel \(transmission.channel)")
+                Text(transmission.transcription.orEmpty)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        } else {
+            Text("No transmission selected")
+                .foregroundStyle(.secondary)
+        }
     }
 }
 
