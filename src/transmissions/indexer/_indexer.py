@@ -193,12 +193,10 @@ class Indexer:
         Build a Whisper model.
         """
         if cls._whisper is None:
-            Indexer.log.info("Loading Whisper model...")
-
             if TYPE_CHECKING:
                 device = "cpu"
             else:
-                import torch
+                import torch  # noqa: PLC0415
 
                 if torch.cuda.is_available():
                     device = "cuda"
@@ -207,6 +205,9 @@ class Indexer:
                     device = "cpu"
                     cls._whisperUseFP16 = False
 
+            Indexer.log.info(
+                "Loading Whisper model (device={device})...", device=device
+            )
             cls._whisper = loadWhisper("large").to(device)
 
         return cls._whisper
@@ -226,7 +227,7 @@ class Indexer:
 
     def _transcription(self, path: Path) -> str:
         result = self.whisper().transcribe(str(path), fp16=self._whisperUseFP16)
-        return cast(str, result["text"])
+        return cast("str", result["text"])
 
     def _transmissionFromFile(self, path: Path) -> Transmission | None:
         """
@@ -436,15 +437,11 @@ class Indexer:
             sha256=sha256,
         )
 
-    async def _addTranscription(
+    async def _storeTranscription(
         self,
         store: TXDataStore,
         transmission: Transmission,
     ) -> None:
-        self.log.info(
-            "Computing transcription for {transmission}",
-            transmission=transmission,
-        )
         with self.log.failuresHandled(
             "Unable to transcribe transmission {transmission} at {transmission.path}:",
             transmission=transmission,
@@ -465,6 +462,28 @@ class Indexer:
             transcriptionVersion=transcriptionVersion,
         )
 
+    async def _addTranscription(
+        self,
+        store: TXDataStore,
+        transmission: Transmission,
+    ) -> None:
+        self.log.info(
+            "Computing transcription for {transmission}",
+            transmission=transmission,
+        )
+        await self._storeTranscription(store, transmission)
+
+    async def _replaceTranscription(
+        self,
+        store: TXDataStore,
+        transmission: Transmission,
+    ) -> None:
+        self.log.info(
+            "Recomputing transcription for {transmission}",
+            transmission=transmission,
+        )
+        await self._storeTranscription(store, transmission)
+
     async def _ensureTransmission(
         self,
         store: TXDataStore,
@@ -473,6 +492,7 @@ class Indexer:
         *,
         computeChecksum: bool,
         computeTranscription: bool,
+        reComputeTranscription: bool,
         computeDuration: bool,
     ) -> None:
         self.log.debug("Ensuring {transmission}", transmission=transmission)
@@ -524,6 +544,16 @@ class Indexer:
         if computeTranscription and transmission.transcription is None:
             addTask(self._addTranscription(store, transmission))
 
+        if (
+            reComputeTranscription
+            and transmission.transcription is not None
+            and (
+                transmission.transcriptionVersion is None
+                or transmission.transcriptionVersion < self._whisperVersion
+            )
+        ):
+            addTask(self._replaceTranscription(store, transmission))
+
     async def indexIntoStore(
         self,
         store: TXDataStore,
@@ -531,6 +561,7 @@ class Indexer:
         existingOnly: bool = False,
         computeChecksum: bool = True,
         computeTranscription: bool = True,
+        reComputeTranscription: bool = False,
         computeDuration: bool = True,
     ) -> None:
         """
@@ -560,6 +591,7 @@ class Indexer:
                         taskQueue,
                         computeChecksum=computeChecksum,
                         computeTranscription=computeTranscription,
+                        reComputeTranscription=reComputeTranscription,
                         computeDuration=computeDuration,
                     )
 
@@ -582,7 +614,7 @@ class Indexer:
 
             scanTask = deferToThread(scan)
 
-        if computeTranscription:
+        if computeTranscription or reComputeTranscription:
             # Load Whisper before we start tasks
             self.whisper()
 
@@ -592,10 +624,10 @@ class Indexer:
             """
             while True:
                 # yields tasks from the task queue.
-                # We don't iterate over for queue in a for loop, because we are
+                # We don't iterate over the queue in a for loop, because we are
                 # altering it as we go.
                 while taskQueue:
-                    yield cast(Deferred[Any], taskQueue.pop())
+                    yield cast("Deferred[Any]", taskQueue.pop())
 
                 # The queue is empty, but don't break unless the scanning
                 # thread is also done.

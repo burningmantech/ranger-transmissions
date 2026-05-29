@@ -9,7 +9,7 @@ from io import StringIO
 from pathlib import Path
 from tomllib import TOMLDecodeError
 from tomllib import load as tomlLoadFile
-from typing import Any, ClassVar, cast
+from typing import Any, ClassVar, TypeAlias, cast
 from unittest.mock import patch
 
 import click
@@ -34,7 +34,7 @@ class ClickTestResult:
     Captured results after testing a click command.
     """
 
-    echoOutputType: ClassVar = list[tuple[str, Mapping[str, Any]]]
+    echoOutputType: ClassVar[TypeAlias] = list[tuple[str, Mapping[str, Any]]]
 
     exitCode: int | None | Internal = Internal.UNSET
 
@@ -71,13 +71,13 @@ def clickTestRun(main: Callable[[], None], arguments: list[str]) -> ClickTestRes
         result.exitCode = code
 
     exit = sys.exit
-    sys.exit = cast(Callable, captureExit)
+    sys.exit = cast("Callable", captureExit)
 
     def captureEcho(format: str, **kwargs: Any) -> None:
         result.echoOutput.append((format, kwargs))
 
     echo = click.echo
-    click.echo = cast(Callable, captureEcho)
+    click.echo = cast("Callable", captureEcho)
 
     with patch("twisted.logger.globalLogBeginner.beginLoggingTo") as beginLoggingTo:
         main()

@@ -21,7 +21,7 @@ def searchIndexFactoryFromConfig(configuration: dict[str, Any]) -> SearchIndexFa
         reindex = True
 
         if fileName:
-            indexPath = Path(fileName).expanduser()
+            indexPath = Path(fileName).expanduser()  # noqa: ASYNC240
             if isinstance(store, SQLiteDataStore):
                 if (
                     indexPath.is_dir()

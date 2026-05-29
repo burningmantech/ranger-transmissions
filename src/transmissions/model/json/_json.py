@@ -199,11 +199,11 @@ def deserialize(
             cls=cls,
             json=obj,
         ) as op:
-            result = jsonDeserialize(obj.get(key.value, None), cls)
+            result = jsonDeserialize(obj.get(key.value), cls)
         if op.failure is not None:
             op.failure.raiseException()
         return result
 
     return cls(
-        **{key.name: deserializeKey(key) for key in cast(Iterable[Enum], keyEnum)}
+        **{key.name: deserializeKey(key) for key in cast("Iterable[Enum]", keyEnum)}
     )

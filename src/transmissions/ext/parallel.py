@@ -23,7 +23,7 @@ An example::
         # Keep track of how long each task is taking via log events
         tasks = timeTasks(tasks, log)
 
-        # Limit the rate at which events are processed to 32 per second
+        # Limit the rate at which tasks are processed to 32 per second
         tasks = rateLimited(tasks, maxRate=32)
 
         # Run the tasks in parallel, running up to 8 tasks simultaneously
@@ -37,7 +37,7 @@ from typing import Any, cast
 
 from attr import attrib, attrs
 from twisted.internet.defer import Deferred, DeferredList, ensureDeferred
-from twisted.internet.interfaces import IReactorTime
+from twisted.internet.interfaces import IReactorTime  # noqa: TC002
 from twisted.internet.task import Cooperator, deferLater
 from twisted.logger import Logger, LogLevel
 
@@ -143,7 +143,7 @@ def rateLimited(
     Limits the processing rate of tasks to a maximum number of tasks per second
     within a rolling time window of a given size (in seconds).
     """
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # noqa: PLC0415
 
     maxPerWindow = maxRate * timeWindow
 
@@ -168,7 +168,7 @@ def rateLimited(
         while True:
             if taskCount() >= maxPerWindow:
                 # Stall for a random time interval up to one time window
-                yield deferLater(cast(IReactorTime, reactor), random() * timeWindow)  # noqa: S311
+                yield deferLater(cast("IReactorTime", reactor), random() * timeWindow)  # noqa: S311
             else:
                 processed.append(time())
                 yield task
