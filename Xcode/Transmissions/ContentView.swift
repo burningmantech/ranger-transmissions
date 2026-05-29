@@ -52,6 +52,10 @@ struct ContentView: View {
 struct TransmissionTableView: View {
     @Binding var searchText: String
 
+    @State private var sortOrder: [KeyPathComparator<Transmission>] = [
+        KeyPathComparator(\.startTime)
+    ]
+
     let transmissions: [Transmission] = [
         Transmission(
             startTime: Date(),
@@ -92,8 +96,10 @@ struct TransmissionTableView: View {
     ]
 
     var body: some View {
-        Table(transmissions) {
-            TableColumn("Time", value: \.startTime.description)
+        Table(transmissions.sorted(using: sortOrder), sortOrder: $sortOrder) {
+            TableColumn("Time", value: \.startTime) { transmission in
+                Text(transmission.startTime.description)
+            }
             TableColumn("Event ID", value: \.eventID)
             TableColumn("Station", value: \.station)
             TableColumn("System", value: \.system)
