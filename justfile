@@ -57,6 +57,11 @@ update:
 install:
     uv sync
 
+# Run indexer
+[group("run")]
+index *args:
+    uv run rtx index {{args}}
+
 # Run the web server
 [group("run")]
 serve:
