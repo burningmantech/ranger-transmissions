@@ -108,13 +108,19 @@ struct TransmissionTableView: View {
         }
     }
 
+    private let dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "EE MM/dd HH:mm"
+        return formatter
+    }()
+
     var body: some View {
         VStack {
             Table(filteredTransmissions, sortOrder: $sortOrder) {
-                TableColumn("Time", value: \.startTime) { transmission in
-                    Text(transmission.startTime.description)
-                }
                 TableColumn("Event ID", value: \.eventID)
+                TableColumn("Time", value: \.startTime) { transmission in
+                    Text(dateFormatter.string(from: transmission.startTime))
+                }
                 TableColumn("Station", value: \.station)
                 TableColumn("System", value: \.system)
                 TableColumn("Channel", value: \.channel)
