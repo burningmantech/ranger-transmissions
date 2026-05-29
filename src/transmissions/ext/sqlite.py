@@ -97,18 +97,6 @@ class Connection(BaseConnection):
 
     _log: ClassVar[Logger] = Logger()
 
-    def cursor(  # type: ignore[override]
-        self,
-        factory: CursorFactory = cast("CursorFactory", Cursor),
-    ) -> "Cursor":
-        """
-        See :meth:`sqlite3.Connection.cursor`.
-        """
-        return cast(
-            "Cursor",
-            super().cursor(factory=factory),  # type: ignore[call-overload]
-        )
-
     def executeAndPrint(self, sql: str, parameters: Parameters | None = None) -> None:
         """
         Execute the given SQL and print the results in a table format.
@@ -193,7 +181,7 @@ def connect(path: Path | None) -> Connection:
     else:
         endpoint = str(path)
 
-    db = cast("Connection", sqliteConnect(endpoint, factory=Connection))
+    db = sqliteConnect(endpoint, factory=Connection)
     db.row_factory = Row
     db.execute("pragma foreign_keys = true")
 

@@ -9,7 +9,7 @@ from io import StringIO
 from pathlib import Path
 from tomllib import TOMLDecodeError
 from tomllib import load as tomlLoadFile
-from typing import Any, ClassVar, cast
+from typing import Any, ClassVar, TypeAlias, cast
 from unittest.mock import patch
 
 import click
@@ -34,7 +34,7 @@ class ClickTestResult:
     Captured results after testing a click command.
     """
 
-    echoOutputType: ClassVar = list[tuple[str, Mapping[str, Any]]]
+    echoOutputType: ClassVar[TypeAlias] = list[tuple[str, Mapping[str, Any]]]
 
     exitCode: int | None | Internal = Internal.UNSET
 
