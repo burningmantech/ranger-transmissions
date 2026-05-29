@@ -104,7 +104,7 @@ class DataStore(DatabaseStore):
     def _dbSchemaVersion(cls, db: Connection) -> int:
         try:
             for row in db.execute(cls.query.schemaVersion.text):
-                return cast(int, row["VERSION"])
+                return cast("int", row["VERSION"])
             raise StorageError("Invalid schema: no version")
 
         except SQLiteError as e:

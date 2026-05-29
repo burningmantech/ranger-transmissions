@@ -57,11 +57,11 @@ class TransmissionsIndex:
             index = storage.create_index(self.schema, indexname=indexname)
         else:
             storage = FileStorage(str(location))
-            if location.exists():
+            if location.exists():  # noqa: ASYNC240
                 index = storage.open_index(indexname=indexname)
             else:
                 self.log.info("Creating search index: {path}", path=location)
-                location.mkdir()
+                location.mkdir()  # noqa: ASYNC240
                 index = storage.create_index(self.schema, indexname=indexname)
 
         self._index = index

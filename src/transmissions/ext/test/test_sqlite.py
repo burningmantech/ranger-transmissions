@@ -221,11 +221,11 @@ class DebugToolsTests(TestCase):
         self.assertEqual(
             str(explanation),
             (
-                "foo:\n\n"  # fmt: skip
+                "foo:\n\n"
                 "  -- query --\n\n"
                 "    select * from FOO"
             ),
-        )
+        )  # fmt: skip
 
     def test_explainQueryPlans_error(self) -> None:
         """
@@ -247,7 +247,7 @@ class DebugToolsTests(TestCase):
             """
         )
 
-        db = cast(ErrneousSQLiteConnection, createDB(None, schema=schema))
+        db = cast("ErrneousSQLiteConnection", createDB(None, schema=schema))
 
         db._generateErrors = True
 

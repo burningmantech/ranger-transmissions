@@ -103,7 +103,7 @@ def configurationFromContext(ctx: Context) -> dict[str, Any]:
     """
     assert ctx.default_map is not None
     assert "_config" in ctx.default_map
-    return cast(dict[str, Any], ctx.default_map["_config"])
+    return cast("dict[str, Any]", ctx.default_map["_config"])
 
 
 def storeFactoryFromContext(ctx: Context) -> StoreFactory:
@@ -111,7 +111,7 @@ def storeFactoryFromContext(ctx: Context) -> StoreFactory:
     Get the data store factory from the given context.
     """
     configuration = configurationFromContext(ctx)
-    return cast(StoreFactory, configuration["storeFactory"])
+    return cast("StoreFactory", configuration["storeFactory"])
 
 
 def searchIndexFactoryFromContext(ctx: Context) -> SearchIndexFactory:
@@ -119,7 +119,7 @@ def searchIndexFactoryFromContext(ctx: Context) -> SearchIndexFactory:
     Get the search index factory from the given context.
     """
     configuration = configurationFromContext(ctx)
-    return cast(SearchIndexFactory, configuration["searchIndexFactory"])
+    return cast("SearchIndexFactory", configuration["searchIndexFactory"])
 
 
 def configuredEventsFromContext(ctx: Context) -> Iterable[tuple[Event, Path]]:
@@ -159,7 +159,7 @@ def run(
     ctx: Context,
     app: Application,
     *,
-    reactor: IReactorTCP = cast(IReactorTCP, defaultReactor),
+    reactor: IReactorTCP = cast("IReactorTCP", defaultReactor),
 ) -> None:
     """
     Interact with the data.
@@ -290,9 +290,19 @@ def main(ctx: Context, config: str) -> None:  # noqa: ARG001
 @option("--checksum/--no-checksum", default=True, help="Compute checksums")
 @option("--duration/--no-duration", default=True, help="Compute durations")
 @option("--transcript/--no-transcript", default=True, help="Compute transcripts")
+@option(
+    "--update-transcript/--no-update-transcript",
+    default=False,
+    help="Recompute transcripts with new versions",
+)
 @pass_context
 def index(
-    ctx: Context, new: bool, checksum: bool, duration: bool, transcript: bool
+    ctx: Context,
+    new: bool,
+    checksum: bool,
+    duration: bool,
+    transcript: bool,
+    update_transcript: bool,
 ) -> None:
     """
     Index audio files.
@@ -308,6 +318,7 @@ def index(
                 computeChecksum=checksum,
                 computeDuration=duration,
                 computeTranscription=transcript,
+                reComputeTranscription=update_transcript,
             )
 
     run(ctx, app)
@@ -446,7 +457,7 @@ def application(ctx: Context) -> None:
         app = TUIApplication(await store.transmissions(), searchIndex)
         app.run()
 
-    run(ctx, app, reactor=cast(IReactorTCP, asyncioReactor))
+    run(ctx, app, reactor=cast("IReactorTCP", asyncioReactor))
 
 
 @main.command()
@@ -455,9 +466,9 @@ def web(ctx: Context) -> None:
     """
     Web server.
     """
-    from twisted.internet import reactor
+    from twisted.internet import reactor  # noqa: PLC0415
 
-    from transmissions.webapi import Application as WebAPIApplication
+    from transmissions.webapi import Application as WebAPIApplication  # noqa: PLC0415
 
     configuration = configurationFromContext(ctx)
     storeFactory = storeFactoryFromContext(ctx)
@@ -477,12 +488,12 @@ def web(ctx: Context) -> None:
 
             application = WebAPIApplication(config=configuration, store=store)
             factory = Site(application.router.resource())
-            cast(IReactorTCP, reactor).listenTCP(port, factory, interface=host)
+            cast("IReactorTCP", reactor).listenTCP(port, factory, interface=host)
 
         return ensureDeferred(run())
 
     runner = Runner(
-        reactor=cast(IReactorCore, reactor),
+        reactor=cast("IReactorCore", reactor),
         # defaultLogLevel=X,
         # logFile=stdout,
         # fileLogObserverFactory=fileLogObserverFactory,

@@ -71,13 +71,13 @@ def clickTestRun(main: Callable[[], None], arguments: list[str]) -> ClickTestRes
         result.exitCode = code
 
     exit = sys.exit
-    sys.exit = cast(Callable, captureExit)
+    sys.exit = cast("Callable", captureExit)
 
     def captureEcho(format: str, **kwargs: Any) -> None:
         result.echoOutput.append((format, kwargs))
 
     echo = click.echo
-    click.echo = cast(Callable, captureEcho)
+    click.echo = cast("Callable", captureEcho)
 
     with patch("twisted.logger.globalLogBeginner.beginLoggingTo") as beginLoggingTo:
         main()

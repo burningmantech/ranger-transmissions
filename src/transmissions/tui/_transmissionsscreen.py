@@ -12,7 +12,7 @@ from ._body import Body
 from ._footer import Footer
 from ._header import Header
 from ._searchfield import SearchField
-from ._transmissiondetails import TransmissionDetails
+from ._transmissiondetails import TransmissionDetails  # noqa: TC001
 from ._transmissionlist import TransmissionList
 from ._util import TransmissionTuple, dateTimeAsText
 
@@ -72,12 +72,12 @@ class TransmissionsScreen(Screen):
         super().__init__()
 
     async def on_mount(self) -> None:
-        transmissionList = cast(TransmissionList, self.query_one("TransmissionList"))
+        transmissionList = cast("TransmissionList", self.query_one("TransmissionList"))
         transmissionList.transmissions = tuple(
             transmissionAsTuple(key, transmission)
             for key, transmission in self.transmissionsByKey.items()
         )
-        footer = cast(Footer, self.query_one("Footer"))
+        footer = cast("Footer", self.query_one("Footer"))
         footer.totalTransmissions = footer.displayedTransmissions = len(
             self.transmissionsByKey
         )
@@ -96,7 +96,7 @@ class TransmissionsScreen(Screen):
 
         # Pass down to details view
         transmissionDetails = cast(
-            TransmissionDetails, self.query_one("TransmissionDetails")
+            "TransmissionDetails", self.query_one("TransmissionDetails")
         )
         transmissionDetails.transmission = transmissionAsTuple(
             message.key, self.selectedTransmission
@@ -105,8 +105,8 @@ class TransmissionsScreen(Screen):
     @on(SearchField.QueryUpdated)
     async def handleSearchQueryUpdated(self, message: SearchField.QueryUpdated) -> None:
         searchQuery = message.query
-        transmissionList = cast(TransmissionList, self.query_one("TransmissionList"))
-        footer = cast(Footer, self.query_one("Footer"))
+        transmissionList = cast("TransmissionList", self.query_one("TransmissionList"))
+        footer = cast("Footer", self.query_one("Footer"))
 
         if searchQuery:
             self.log(f"Search query: {searchQuery}")

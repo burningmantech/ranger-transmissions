@@ -12,7 +12,7 @@ from sqlite3 import IntegrityError
 from sqlite3 import Row as BaseRow
 from sqlite3 import connect as sqliteConnect
 from types import TracebackType
-from typing import Any, ClassVar, TextIO, cast
+from typing import Any, ClassVar, Self, TextIO, cast
 
 from attrs import frozen
 from twisted.logger import Logger
@@ -56,7 +56,7 @@ class Row(BaseRow):
         Returns :obj:`None` if there is no such column.
         """
         if key in self.keys():
-            return cast(ParameterValue, self[key])
+            return cast("ParameterValue", self[key])
         return default
 
 
@@ -99,7 +99,7 @@ class Connection(BaseConnection):
 
     def cursor(  # type: ignore[override]
         self,
-        factory: CursorFactory = cast(CursorFactory, Cursor),
+        factory: CursorFactory = cast("CursorFactory", Cursor),
     ) -> "Cursor":
         """
         See :meth:`sqlite3.Connection.cursor`.
@@ -119,11 +119,11 @@ class Connection(BaseConnection):
 
         printHeader = True
 
-        for row in cast(Iterable[Row], self.execute(sql, cast(Any, parameters))):
+        for row in cast("Iterable[Row]", self.execute(sql, cast("Any", parameters))):
             if printHeader:
                 emit(row.keys())
                 printHeader = False
-            emit(cast(Iterable[object], row))
+            emit(cast("Iterable[object]", row))
 
     def commit(self) -> None:
         """
@@ -169,7 +169,7 @@ class Connection(BaseConnection):
         if not valid:
             raise IntegrityError("Foreign key constraints violated")
 
-    def __enter__(self: "Connection") -> "Connection":
+    def __enter__(self) -> Self:
         self._log.debug("---------- ENTER ----------")
         super().__enter__()
         return self
@@ -181,7 +181,7 @@ class Connection(BaseConnection):
         exc_tb: TracebackType | None,
     ) -> bool:
         self._log.debug("---------- EXIT ----------")
-        return cast(bool, super().__exit__(exc_type, exc_val, exc_tb))
+        return cast("bool", super().__exit__(exc_type, exc_val, exc_tb))
 
 
 def connect(path: Path | None) -> Connection:
@@ -193,7 +193,7 @@ def connect(path: Path | None) -> Connection:
     else:
         endpoint = str(path)
 
-    db = cast(Connection, sqliteConnect(endpoint, factory=Connection))
+    db = cast("Connection", sqliteConnect(endpoint, factory=Connection))
     db.row_factory = Row
     db.execute("pragma foreign_keys = true")
 

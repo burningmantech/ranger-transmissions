@@ -63,7 +63,7 @@ def deserializeTransmission(
     assert cl is Transmission, (cl, obj)
 
     return cast(
-        Transmission,
+        "Transmission",
         deserialize(
             obj,
             Transmission,

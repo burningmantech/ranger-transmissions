@@ -29,7 +29,7 @@ def storeFactoryFromConfig(
 def sqliteStoreFactoryFromConfig(
     storeConfig: dict[str, Any], *, create: bool = True
 ) -> StoreFactory:
-    from transmissions.store.sqlite import DataStore
+    from transmissions.store.sqlite import DataStore  # noqa: PLC0415
 
     fileName = storeConfig.get("File", "~/rtx.sqlite")
     filePath = Path(fileName).expanduser()

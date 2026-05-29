@@ -61,16 +61,16 @@ Changelog = "https://github.com/burningmantech/ranger-transmissions/blob/master/
 
 [dependency-groups]
 lint = [
-    "pre-commit==4.3.0",
+    "pre-commit==4.6.0",
 ]
 unit = [
-    "coverage==7.11.0",
-    "hypothesis==6.112.4",
+    "coverage==7.14.1",
+    "hypothesis==6.155.0",
 ]
 mypy = [
-    "mypy-zope==1.0.5",
-    "mypy==1.7.1",
-    "pydub-stubs==0.25.1.1",
+    "mypy-zope==1.0.15",
+    "mypy==2.1.0",
+    "pydub-stubs==0.25.1.6",
 ]
 packaging = [
     "pip",

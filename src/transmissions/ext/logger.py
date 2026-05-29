@@ -34,12 +34,12 @@ def startLogging(file: TextIO = sys.stdout) -> None:
     """
     fileObserver = textFileLogObserver(file)
     filteringObserver = FilteringLogObserver(
-        cast(ILogObserver, fileObserver),
-        (cast(ILogFilterPredicate, globalLogLevelPredicate),),
+        cast("ILogObserver", fileObserver),
+        (cast("ILogFilterPredicate", globalLogLevelPredicate),),
     )
 
     globalLogBeginner.beginLoggingTo(
-        [cast(ILogObserver, filteringObserver)],
+        [cast("ILogObserver", filteringObserver)],
         redirectStandardIO=False,
     )
 
@@ -47,7 +47,7 @@ def startLogging(file: TextIO = sys.stdout) -> None:
 @contextmanager
 def logCapture() -> Iterator[list[dict[str, Any]]]:
     events: list[dict[str, Any]] = []
-    observer = cast(ILogObserver, events.append)
+    observer = cast("ILogObserver", events.append)
 
     globalLogPublisher.addObserver(observer)
 
