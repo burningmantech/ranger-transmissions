@@ -12,8 +12,11 @@ lint:
 
 # Run type checker
 [group("qa")]
-typing TARGET="src":
+mypy TARGET="src":
     uv run --group=mypy mypy "{{TARGET}}"
+
+typing:
+    @just mypy
 
 # Run tests
 [group("qa")]
