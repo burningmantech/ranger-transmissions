@@ -8,7 +8,7 @@ MODULE_NAME := "transmissions"
 # Run linters and formatters
 [group("qa")]
 lint:
-    pre-commit run --all-files
+    uv tool run pre-commit run --all-files
 
 # Run unit tests
 [group("qa")]
