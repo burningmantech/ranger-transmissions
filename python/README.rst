@@ -1,11 +1,7 @@
 Ranger Radio Transmission Indexer
 =================================
 
-.. image:: https://github.com/burningmantech/ranger-transmissions/workflows/CI%2fCD/badge.svg
-    :target: https://github.com/burningmantech/ranger-transmissions/actions
-    :alt: Build Status
-
-This software package contains functionality for processing audio from Burning Man's radio system.
+This software package contains functionality for indexing and processing audio from Burning Man's radio system.
 
 
 Installation
