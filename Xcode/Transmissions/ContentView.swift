@@ -13,13 +13,19 @@ extension Optional where Wrapped == String {
     }
 }
 
+extension Optional where Wrapped == Duration {
+    var orZero: Wrapped {
+        self ?? Duration.seconds(0)
+    }
+}
+
 struct Transmission: Identifiable {
     let startTime: Date
     let eventID: String
     let station: String
     let system: String
     let channel: String
-    let duration: TimeInterval?
+    let duration: Duration?
     let path: String
     let sha256: String?
     let transcription: String?
@@ -46,7 +52,7 @@ struct ContentView: View {
             station: "Tool",
             system: "A",
             channel: "Ranger HQ",
-            duration: 0.0,
+            duration: Duration.seconds(0.0),
             path: "/",
             sha256: "",
             transcription: "Crow, Crow, Tool",
@@ -58,7 +64,7 @@ struct ContentView: View {
             station: "Crow",
             system: "A",
             channel: "Ranger HQ",
-            duration: 0.0,
+            duration: Duration.seconds(2.0),
             path: "/",
             sha256: "",
             transcription: "Tool, go for Crow",
@@ -70,7 +76,7 @@ struct ContentView: View {
             station: "Tool",
             system: "A",
             channel: "Ranger HQ",
-            duration: 0.0,
+            duration: nil,
             path: "/",
             sha256: "",
             transcription: "Crow, are you available, and if so what's you 20?",
@@ -125,16 +131,21 @@ struct TransmissionTableView: View {
         return formatter
     }()
 
+    private let durationStyle = Duration.TimeFormatStyle(pattern: .hourMinuteSecond(padHourToLength: 2))
+
     var body: some View {
         VStack {
             Table(filteredTransmissions, selection: $selectedTransmissionID, sortOrder: $sortOrder) {
                 TableColumn("Event ID", value: \.eventID)
+                TableColumn("Station", value: \.station)
+                TableColumn("System", value: \.system)
                 TableColumn("Time", value: \.startTime) { transmission in
                     Text(dateFormatter.string(from: transmission.startTime))
                 }
-                TableColumn("Station", value: \.station)
-                TableColumn("System", value: \.system)
                 TableColumn("Channel", value: \.channel)
+                TableColumn("Duration", value: \.duration.orZero) { transmission in
+                    Text(transmission.duration?.formatted(durationStyle) ?? "")
+                }
                 TableColumn("Transcript", value: \.transcription.orEmpty)
             }
         }
