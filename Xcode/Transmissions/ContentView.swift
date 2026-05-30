@@ -137,21 +137,21 @@ struct TransmissionTableView: View {
         VStack {
             Table(filteredTransmissions, selection: $selectedTransmissionID, sortOrder: $sortOrder) {
                 TableColumn("Event ID", value: \.eventID)
-                    .width(ideal: 50)
+                    .width(50)
                 TableColumn("Station", value: \.station)
-                    .width(ideal: 75)
+                    .width(125)
                 TableColumn("System", value: \.system)
-                    .width(ideal: 45)
+                    .width(45)
                 TableColumn("Time", value: \.startTime) { transmission in
                     Text(dateFormatter.string(from: transmission.startTime))
                 }
-                .width(ideal: 50)
+                .width(95)
                 TableColumn("Channel", value: \.channel)
-                    .width(ideal: 75)
+                    .width(100)
                 TableColumn("Duration", value: \.duration.orZero) { transmission in
                     Text(transmission.duration?.formatted(durationStyle) ?? "")
                 }
-                .width(ideal: 60)
+                .width(60)
                 TableColumn("Transcript", value: \.transcription.orEmpty)
             }
         }
