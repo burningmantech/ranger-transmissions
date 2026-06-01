@@ -403,7 +403,7 @@ class Indexer:
         store: TXDataStore,
         transmission: Transmission,
     ) -> None:
-        self.log.info(
+        self.log.debug(
             "Computing duration for {transmission}", transmission=transmission
         )
         with self.log.failuresHandled(
@@ -427,7 +427,7 @@ class Indexer:
         store: TXDataStore,
         transmission: Transmission,
     ) -> None:
-        self.log.info("Computing SHA256 for {transmission}", transmission=transmission)
+        self.log.debug("Computing SHA256 for {transmission}", transmission=transmission)
         sha256 = await deferToThread(self._sha256, transmission.path)
         await store.setTransmissionSHA256(
             eventID=transmission.eventID,
@@ -467,7 +467,7 @@ class Indexer:
         store: TXDataStore,
         transmission: Transmission,
     ) -> None:
-        self.log.info(
+        self.log.debug(
             "Computing transcription for {transmission}",
             transmission=transmission,
         )
@@ -478,7 +478,7 @@ class Indexer:
         store: TXDataStore,
         transmission: Transmission,
     ) -> None:
-        self.log.info(
+        self.log.debug(
             "Recomputing transcription for {transmission}",
             transmission=transmission,
         )
