@@ -58,15 +58,17 @@ struct ContentView: View {
     var body: some View {
         VStack {
             TransmissionSearchBarView(searchText: $searchText)
-            TransmissionTableView(
-                transmissions: transmissions,
-                selectedTransmissionID: $selectedTransmissionID,
-            )
             if let loadError {
                 Text(loadError)
                     .foregroundStyle(.red)
+            } else {
+                TransmissionTableView(
+                    transmissions: transmissions,
+                    selectedTransmissionID: $selectedTransmissionID,
+                )
+                TransmissionDetailsView(transmission: selectedTransmission)
+                    .frame(height: 150)
             }
-            TransmissionDetailsView(transmission: selectedTransmission)
         }
         .padding()
         .toolbar {
