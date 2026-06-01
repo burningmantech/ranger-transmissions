@@ -146,7 +146,7 @@ class Patterns:
     @classmethod
     def pattern_2024(cls) -> Pattern:
         """
-        Regex for 2024 file names.
+        Regex for 2024-2025 file names.
         """
         # Examples:
         "2024-08-29 04-54-33 BRC 911 ALT All Call- 'Radio' called 'All'.wav"
