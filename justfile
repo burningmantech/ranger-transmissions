@@ -68,8 +68,8 @@ _trial_coverage *args:
 # Check packaging
 [group("qa")]
 packaging:
-    uv run --group=packaging pip wheel --no-deps --wheel-dir=dist .
-    uv run --group=packaging twine check dist/*
+    @just _uvrun --group=packaging pip wheel --no-deps --wheel-dir=dist .
+    @just _uvrun --group=packaging twine check dist/*
 
 # Update lockfile
 [group("lifecycle")]
@@ -84,12 +84,12 @@ install:
 # Run indexer
 [group("run")]
 index *args:
-    uv run rtx index {{args}}
+    @just _uvrun rtx index {{args}}
 
 # Run the web server
 [group("run")]
 serve:
-    uv run rtx web
+    _uvrun rtx web
 
 # Helper for running httpie
 _http *args:
@@ -103,4 +103,4 @@ request path="" *args:
 # Open the local server in the default web browser
 [group("run")]
 browser:
-    uv run -m webbrowser -t http://localhost:8080/
+    @just _uvrun -m webbrowser -t http://localhost:8080/
