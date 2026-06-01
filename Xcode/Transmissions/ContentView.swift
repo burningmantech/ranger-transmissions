@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UniformTypeIdentifiers
 
 extension Optional where Wrapped == String {
     var orEmpty: Wrapped {
@@ -44,45 +45,9 @@ struct Transmission: Identifiable {
 struct ContentView: View {
     @State private var searchText: String = ""
     @State private var selectedTransmissionID: Transmission.ID?
-
-    let transmissions: [Transmission] = [
-        Transmission(
-            startTime: Date(),
-            eventID: "2024",
-            station: "Tool",
-            system: "A",
-            channel: "Ranger HQ",
-            duration: Duration.seconds(0.0),
-            path: "/",
-            sha256: "",
-            transcription: "Crow, Crow, Tool",
-            transcriptionVersion: 0,
-        ),
-        Transmission(
-            startTime: Date(),
-            eventID: "2023",
-            station: "Crow",
-            system: "A",
-            channel: "Ranger HQ",
-            duration: Duration.seconds(2.0),
-            path: "/",
-            sha256: "",
-            transcription: "Tool, go for Crow",
-            transcriptionVersion: 0,
-        ),
-        Transmission(
-            startTime: Date(),
-            eventID: "2021",
-            station: "Tool",
-            system: "A",
-            channel: "Ranger HQ",
-            duration: nil,
-            path: "/",
-            sha256: "",
-            transcription: "Crow, are you available, and if so what's you 20?",
-            transcriptionVersion: 0,
-        ),
-    ]
+    @State private var transmissions: [Transmission] = []
+    @State private var loadError: String?
+    @State private var isImporting: Bool = false
 
     var selectedTransmission: Transmission? {
         guard let selectedTransmissionID else { return nil }
@@ -97,9 +62,44 @@ struct ContentView: View {
                 searchText: $searchText,
                 selectedTransmissionID: $selectedTransmissionID,
             )
+            if let loadError {
+                Text(loadError)
+                    .foregroundStyle(.red)
+            }
             TransmissionDetailsView(transmission: selectedTransmission)
         }
         .padding()
+        .toolbar {
+            ToolbarItem {
+                Button("Open Database…") { isImporting = true }
+            }
+        }
+        .fileImporter(
+            isPresented: $isImporting,
+            allowedContentTypes: [
+                UTType(filenameExtension: "sqlite") ?? .data,
+                .data,
+            ]
+        ) { result in
+            switch result {
+            case .success(let url):
+                loadTransmissions(from: url)
+            case .failure(let error):
+                loadError = error.localizedDescription
+            }
+        }
+    }
+
+    private func loadTransmissions(from url: URL) {
+        let needsRelease = url.startAccessingSecurityScopedResource()
+        defer { if needsRelease { url.stopAccessingSecurityScopedResource() } }
+        do {
+            transmissions = try TransmissionDatabase(url: url).loadTransmissions()
+            loadError = nil
+        } catch {
+            loadError = "Failed to load database: \(error)"
+            transmissions = []
+        }
     }
 }
 
