@@ -46,6 +46,7 @@ struct ContentView: View {
     @State private var searchText: String = ""
     @State private var selectedTransmissionID: Transmission.ID?
     @State private var transmissions: [Transmission] = []
+    @State private var database: TransmissionDatabase?
     @State private var loadError: String?
     @State private var isImporting: Bool = false
 
@@ -59,7 +60,6 @@ struct ContentView: View {
             TransmissionSearchBarView(searchText: $searchText)
             TransmissionTableView(
                 transmissions: transmissions,
-                searchText: $searchText,
                 selectedTransmissionID: $selectedTransmissionID,
             )
             if let loadError {
@@ -83,46 +83,53 @@ struct ContentView: View {
         ) { result in
             switch result {
             case .success(let url):
-                loadTransmissions(from: url)
+                openDatabase(at: url)
             case .failure(let error):
                 loadError = error.localizedDescription
             }
         }
+        .task(id: SearchKey(searchText: searchText, databaseID: database.map(ObjectIdentifier.init))) {
+            try? await Task.sleep(nanoseconds: 200_000_000)
+            guard !Task.isCancelled, let database else { return }
+            do {
+                transmissions = try database.transmissions(matching: searchText)
+                loadError = nil
+            } catch {
+                loadError = "Search failed: \(error)"
+            }
+        }
     }
 
-    private func loadTransmissions(from url: URL) {
+    private func openDatabase(at url: URL) {
         let needsRelease = url.startAccessingSecurityScopedResource()
         defer { if needsRelease { url.stopAccessingSecurityScopedResource() } }
         do {
-            transmissions = try TransmissionDatabase(url: url).loadTransmissions()
+            database = try TransmissionDatabase(url: url)
             loadError = nil
         } catch {
-            loadError = "Failed to load database: \(error)"
+            loadError = "Failed to open database: \(error)"
+            database = nil
             transmissions = []
         }
     }
 }
 
+private struct SearchKey: Hashable {
+    let searchText: String
+    let databaseID: ObjectIdentifier?
+}
+
 struct TransmissionTableView: View {
     let transmissions: [Transmission]
 
-    @Binding var searchText: String
     @Binding var selectedTransmissionID: Transmission.ID?
 
     @State private var sortOrder: [KeyPathComparator<Transmission>] = [
         KeyPathComparator(\.startTime)
     ]
 
-    var filteredTransmissions: [Transmission] {
-        let sorted = transmissions.sorted(using: sortOrder)
-        guard !searchText.isEmpty else { return sorted }
-        return sorted.filter { transmission in
-            transmission.eventID.localizedCaseInsensitiveContains(searchText)
-                || transmission.station.localizedCaseInsensitiveContains(searchText)
-                || transmission.system.localizedCaseInsensitiveContains(searchText)
-                || transmission.channel.localizedCaseInsensitiveContains(searchText)
-                || transmission.transcription.orEmpty.localizedCaseInsensitiveContains(searchText)
-        }
+    var sortedTransmissions: [Transmission] {
+        transmissions.sorted(using: sortOrder)
     }
 
     private let dateFormatter: DateFormatter = {
@@ -135,7 +142,7 @@ struct TransmissionTableView: View {
 
     var body: some View {
         VStack {
-            Table(filteredTransmissions, selection: $selectedTransmissionID, sortOrder: $sortOrder) {
+            Table(sortedTransmissions, selection: $selectedTransmissionID, sortOrder: $sortOrder) {
                 TableColumn("Event ID", value: \.eventID)
                     .width(50)
                 TableColumn("Station", value: \.station)

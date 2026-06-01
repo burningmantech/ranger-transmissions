@@ -11,23 +11,46 @@ enum TransmissionDatabaseError: Error {
     case prepareFailed(String)
 }
 
-struct TransmissionDatabase {
-    let url: URL
+private let SQLITE_TRANSIENT = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
 
-    func loadTransmissions() throws -> [Transmission] {
-        var db: OpaquePointer?
-        guard sqlite3_open_v2(url.path, &db, SQLITE_OPEN_READONLY, nil) == SQLITE_OK else {
-            let message = db.map { String(cString: sqlite3_errmsg($0)) } ?? "unknown error"
-            sqlite3_close(db)
+final class TransmissionDatabase {
+    private var db: OpaquePointer?
+
+    init(url: URL) throws {
+        var handle: OpaquePointer?
+        let result = sqlite3_open_v2(url.path, &handle, SQLITE_OPEN_READONLY, nil)
+        guard result == SQLITE_OK else {
+            let message = handle.map { String(cString: sqlite3_errmsg($0)) } ?? "unknown error"
+            sqlite3_close(handle)
             throw TransmissionDatabaseError.openFailed(message)
         }
-        defer { sqlite3_close(db) }
+        self.db = handle
+        try createFullTextIndex()
+    }
 
-        let sql = """
-            SELECT EVENT, STATION, SYSTEM, CHANNEL, START_TIME, DURATION,
-                   FILE_NAME, SHA256, TRANSCRIPTION, TRANSCRIPTION_VERSION
-            FROM TRANSMISSION
-            """
+    deinit {
+        sqlite3_close(db)
+    }
+
+    func transmissions(matching searchText: String) throws -> [Transmission] {
+        let trimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let useMatch = !trimmed.isEmpty
+
+        let sql: String
+        if useMatch {
+            sql = """
+                select EVENT_ID, STATION, SYSTEM, CHANNEL, START_TIME, DURATION,
+                       FILE_NAME, SHA256, TRANSCRIPTION, TRANSCRIPTION_VERSION
+                from TRANSMISSIONS_FTS
+                where TRANSMISSIONS_FTS match ?
+                """
+        } else {
+            sql = """
+                select EVENT_ID, STATION, SYSTEM, CHANNEL, START_TIME, DURATION,
+                       FILE_NAME, SHA256, TRANSCRIPTION, TRANSCRIPTION_VERSION
+                from TRANSMISSIONS_FTS
+                """
+        }
 
         var statement: OpaquePointer?
         guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK else {
@@ -36,15 +59,20 @@ struct TransmissionDatabase {
         }
         defer { sqlite3_finalize(statement) }
 
+        if useMatch {
+            let query = fts5Query(for: trimmed)
+            sqlite3_bind_text(statement, 1, query, -1, SQLITE_TRANSIENT)
+        }
+
         var results: [Transmission] = []
         while sqlite3_step(statement) == SQLITE_ROW {
             results.append(
                 Transmission(
+                    startTime: Date(timeIntervalSince1970: sqlite3_column_double(statement, 4)),
                     eventID: columnText(statement, 0) ?? "",
                     station: columnText(statement, 1) ?? "",
                     system: columnText(statement, 2) ?? "",
                     channel: columnText(statement, 3) ?? "",
-                    startTime: Date(timeIntervalSince1970: sqlite3_column_double(statement, 4)),
                     duration: columnDouble(statement, 5).map { Duration.seconds($0) },
                     path: columnText(statement, 6) ?? "",
                     sha256: columnText(statement, 7),
@@ -53,8 +81,48 @@ struct TransmissionDatabase {
                 )
             )
         }
-
         return results
+    }
+
+    private func createFullTextIndex() throws {
+        try execute("""
+            create virtual table temp.TRANSMISSIONS_FTS using fts5(
+                EVENT_ID, STATION, SYSTEM, CHANNEL, TRANSCRIPTION,
+                START_TIME unindexed,
+                DURATION unindexed,
+                FILE_NAME unindexed,
+                SHA256 unindexed,
+                TRANSCRIPTION_VERSION unindexed
+            )
+            """)
+        try execute("""
+            insert into temp.TRANSMISSIONS_FTS (
+                EVENT_ID, STATION, SYSTEM, CHANNEL, TRANSCRIPTION,
+                START_TIME, DURATION, FILE_NAME, SHA256, TRANSCRIPTION_VERSION
+            )
+            select EVENT, STATION, SYSTEM, CHANNEL, TRANSCRIPTION,
+                   START_TIME, DURATION, FILE_NAME, SHA256, TRANSCRIPTION_VERSION
+            from TRANSMISSION
+            """)
+    }
+
+    private func execute(_ sql: String) throws {
+        var errorPointer: UnsafeMutablePointer<CChar>?
+        guard sqlite3_exec(db, sql, nil, nil, &errorPointer) == SQLITE_OK else {
+            let message = errorPointer.map { String(cString: $0) } ?? "unknown error"
+            sqlite3_free(errorPointer)
+            throw TransmissionDatabaseError.prepareFailed(message)
+        }
+    }
+
+    private func fts5Query(for text: String) -> String {
+        text.components(separatedBy: .whitespacesAndNewlines)
+            .filter { !$0.isEmpty }
+            .map { token in
+                let escaped = token.replacingOccurrences(of: "\"", with: "\"\"")
+                return "\"\(escaped)\"*"
+            }
+            .joined(separator: " ")
     }
 
     private func columnText(_ statement: OpaquePointer?, _ index: Int32) -> String? {
