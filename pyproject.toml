@@ -65,7 +65,7 @@ lint = [
 ]
 unit = [
     "coverage==7.14.1",
-    "hypothesis==6.155.0",
+    "hypothesis==6.155.1",
 ]
 mypy = [
     "mypy-zope==1.0.15",
