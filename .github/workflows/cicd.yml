@@ -46,7 +46,7 @@ jobs:
         uses: astral-sh/setup-uv@v7
 
       - name: Install just
-        uses: extractions/setup-just@v3
+        uses: extractions/setup-just@v4
 
       - name: Run Linters
         run: just lint
@@ -91,7 +91,7 @@ jobs:
         uses: astral-sh/setup-uv@v7
 
       - name: Install just
-        uses: extractions/setup-just@v3
+        uses: extractions/setup-just@v4
 
       - name: Run Mypy
         run: just mypy
@@ -129,7 +129,7 @@ jobs:
   #       uses: astral-sh/setup-uv@v7
 
   #     - name: Install just
-  #       uses: extractions/setup-just@v3
+  #       uses: extractions/setup-just@v4
 
   #     - name: Check packaging
   #       run: just packaging
@@ -189,7 +189,7 @@ jobs:
         uses: astral-sh/setup-uv@v7
 
       - name: Install just
-        uses: extractions/setup-just@v3
+        uses: extractions/setup-just@v4
 
       - name: Run unit tests
         id: test
