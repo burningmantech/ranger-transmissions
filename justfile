@@ -38,6 +38,11 @@ doit: lint typing coverage
 _uvrun *args:
     uv --directory=python run {{args}}
 
+# Run Python
+[group("dev")]
+python *args:
+    @just _uvrun python {{args}}
+
 # Run mypy
 [group("qa")]
 mypy TARGET="src":
