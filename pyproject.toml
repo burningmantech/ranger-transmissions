@@ -27,7 +27,7 @@ dependencies = [
     "rich==14.2.0",
     "simpleaudio==1.0.4; sys_platform=='darwin'",
     "textual==8.2.7",
-    "Twisted==24.11.0",
+    "Twisted==26.4.0",
     "Whoosh-Reloaded==2.7.5",
 ]
 
