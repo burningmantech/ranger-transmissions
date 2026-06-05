@@ -14,7 +14,7 @@ license = "Apache-2.0"
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "arrow==1.4.0",
-    "attrs==25.4.0",
+    "attrs==26.1.0",
     "audioop-lts==0.2.1; python_version>='3.13'",  # Requred by pydub; formerly in stdlib
     "cattrs==26.1.0",
     "click==8.4.1",
