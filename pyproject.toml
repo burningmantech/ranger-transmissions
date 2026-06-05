@@ -24,7 +24,7 @@ dependencies = [
     "pyobjc==12.2; sys_platform=='darwin'",
     "reflex==0.9.4",
     "reflex-ag-grid==0.0.11",
-    "rich==14.2.0",
+    "rich==15.0.0",
     "simpleaudio==1.0.4; sys_platform=='darwin'",
     "textual==8.2.7",
     "Twisted==24.11.0",
