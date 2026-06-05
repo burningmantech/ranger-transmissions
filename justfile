@@ -84,7 +84,7 @@ update:
 # Install dependencies
 [group("lifecycle")]
 install:
-    uv sync
+    uv --directory=python sync
 
 # Run indexer
 [group("run")]
