@@ -11,66 +11,58 @@ import SwiftUI
 final class TransmissionList {
     private(set) var totalCount: Int = 0
     private(set) var dataVersion: Int = 0
+    private(set) var isFullTextIndexReady: Bool = false
+    private(set) var isLoading: Bool = false
 
     var searchText: String = "" {
         didSet {
-            print("Search: \(searchText)")
-            if searchText != oldValue { reload() }
+            if searchText != oldValue { scheduleReload() }
         }
     }
 
     var sortOrder: [KeyPathComparator<Transmission>] = [.init(\.startTime)] {
         didSet {
-            print("Sort: \(sortOrder)")
-            if !sortOrderEquals(sortOrder, oldValue) { reload() }
+            if !sortOrderEquals(sortOrder, oldValue) { scheduleReload() }
         }
     }
 
     private let database: TransmissionDatabase?
     private var pages: [Int: [Transmission]] = [:]
     private let pageSize: Int = 1000
+    private var reloadTask: Task<Void, Never>?
+    private var pageTasks: [Int: Task<Void, Never>] = [:]
+    private var bumpTask: Task<Void, Never>?
 
     init(database: TransmissionDatabase?) {
         self.database = database
-        reload()
+        scheduleReload()
+        guard let database else { return }
+        Task.detached(priority: .userInitiated) { [weak self] in
+            do {
+                try database.buildFullTextIndex()
+            } catch {
+                return
+            }
+            await self?.fullTextIndexDidBuild()
+        }
+    }
+
+    private func fullTextIndexDidBuild() {
+        isFullTextIndexReady = true
+        if !searchText.isEmpty { scheduleReload() }
     }
 
     func transmission(at index: Int) -> Transmission {
-        print("Fetching txn at index \(index)...")
         let pageIndex = index / pageSize
         let local = index - (pageIndex * pageSize)
         if let page = pages[pageIndex], local < page.count {
-            print("\tfound cached at page \(pageIndex), #\(local)")
             return page[local]
         }
-        guard let database else {
-            print("\tNo database, using placeholder...")
-            return placeholder(at: index)
-        }
-        do {
-            let rows = try database.transmissions(
-                matching: searchText,
-                orderBy: sqlOrderClause,
-                offset: pageIndex * pageSize,
-                limit: pageSize,
-            )
-            pages[pageIndex] = rows
-            print("\tFetched \(rows.count) rows for page \(pageIndex)")
-            if local < rows.count {
-                print("\tfound at page \(pageIndex), #\(local)")
-                return rows[local]
-            } else {
-                print("\toverrun (\(local) >= \(rows.count)); using placeholder")
-                return placeholder(at: index)
-            }
-        } catch {
-            print("\terror (\(error)); using placeholder")
-            return placeholder(at: index)
-        }
+        loadPage(pageIndex)
+        return placeholder(at: index)
     }
 
     func transmission(forID id: Transmission.ID) -> Transmission? {
-        print("Getting txn for ID \(id)...")
         for page in pages.values {
             if let match = page.first(where: { $0.id == id }) {
                 return match
@@ -81,18 +73,140 @@ final class TransmissionList {
 
     var rows: TransmissionRows { TransmissionRows(list: self) }
 
-    private func reload() {
-        print("Reloading DB...")
-        guard let database else {
-            return;
+    private func scheduleReload() {
+        reloadTask?.cancel()
+        for (_, task) in pageTasks { task.cancel() }
+        pageTasks.removeAll()
+        bumpTask?.cancel()
+        bumpTask = nil
+        reloadTask = Task { [weak self] in
+            await self?.performReload()
+        }
+    }
+
+    private func performReload() async {
+        guard let database else { return }
+        let searchText = self.searchText
+        let isIndexReady = self.isFullTextIndexReady
+        let orderClause = self.sqlOrderClause
+        let pageSize = self.pageSize
+        isLoading = true
+
+        // Fetch count and page 0 together so the table can render real rows
+        // immediately rather than placeholders that flash to real data.
+        async let countResult = Self.fetchCount(
+            database: database,
+            searchText: searchText,
+            isIndexReady: isIndexReady,
+        )
+        async let firstPageResult = Self.fetchPage(
+            database: database,
+            searchText: searchText,
+            isIndexReady: isIndexReady,
+            orderClause: orderClause,
+            pageIndex: 0,
+            pageSize: pageSize,
+        )
+        let count = await countResult
+        let firstPage = await firstPageResult
+
+        guard !Task.isCancelled else {
+            isLoading = false
+            return
         }
         pages.removeAll()
-        do {
-            totalCount = try database.count(matching: searchText)
-        } catch {
-            totalCount = 0
-        }
+        pages[0] = firstPage
+        totalCount = count
+        isLoading = false
         dataVersion &+= 1
+    }
+
+    nonisolated private static func fetchCount(
+        database: TransmissionDatabase,
+        searchText: String,
+        isIndexReady: Bool,
+    ) async -> Int {
+        await Task.detached(priority: .userInitiated) {
+            do {
+                if searchText.isEmpty {
+                    return try database.count()
+                } else if isIndexReady {
+                    return try database.count(matching: searchText)
+                } else {
+                    return 0
+                }
+            } catch {
+                return 0
+            }
+        }.value
+    }
+
+    private func loadPage(_ pageIndex: Int) {
+        if pageTasks[pageIndex] != nil { return }
+        guard let database else { return }
+        let searchText = self.searchText
+        let isIndexReady = self.isFullTextIndexReady
+        let orderClause = self.sqlOrderClause
+        let pageSize = self.pageSize
+
+        pageTasks[pageIndex] = Task { [weak self] in
+            let rows = await Self.fetchPage(
+                database: database,
+                searchText: searchText,
+                isIndexReady: isIndexReady,
+                orderClause: orderClause,
+                pageIndex: pageIndex,
+                pageSize: pageSize,
+            )
+            guard let self else { return }
+            self.pageTasks[pageIndex] = nil
+            guard !Task.isCancelled else { return }
+            self.pages[pageIndex] = rows
+            self.scheduleBump()
+        }
+    }
+
+    nonisolated private static func fetchPage(
+        database: TransmissionDatabase,
+        searchText: String,
+        isIndexReady: Bool,
+        orderClause: String,
+        pageIndex: Int,
+        pageSize: Int,
+    ) async -> [Transmission] {
+        await Task.detached(priority: .userInitiated) {
+            do {
+                if searchText.isEmpty {
+                    return try database.transmissions(
+                        orderBy: orderClause,
+                        offset: pageIndex * pageSize,
+                        limit: pageSize,
+                    )
+                } else if isIndexReady {
+                    return try database.transmissions(
+                        matching: searchText,
+                        orderBy: orderClause,
+                        offset: pageIndex * pageSize,
+                        limit: pageSize,
+                    )
+                } else {
+                    return []
+                }
+            } catch {
+                return []
+            }
+        }.value
+    }
+
+    // Coalesce dataVersion bumps so multiple page loads in quick succession
+    // only force one Table rebuild.
+    private func scheduleBump() {
+        bumpTask?.cancel()
+        bumpTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 200_000_000)
+            guard !Task.isCancelled else { return }
+            self?.dataVersion &+= 1
+        }
     }
 
     private var sqlOrderClause: String {
@@ -144,7 +258,6 @@ struct TransmissionRows: RandomAccessCollection {
     var endIndex: Int { list.totalCount }
 
     subscript(position: Int) -> Transmission {
-        print("Fetching txn row at index \(position)...")
         return list.transmission(at: position)
     }
 }

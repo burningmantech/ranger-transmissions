@@ -56,7 +56,10 @@ struct ContentView: View {
 
     var body: some View {
         VStack {
-            TransmissionSearchBarView(searchText: $searchText)
+            TransmissionSearchBarView(
+                searchText: $searchText,
+                isEnabled: transmissionList?.isFullTextIndexReady ?? false,
+            )
             if let loadError {
                 Text(loadError)
                     .foregroundStyle(.red)
@@ -159,13 +162,18 @@ struct TransmissionTableView: View {
 
 struct TransmissionSearchBarView: View {
     @Binding var searchText: String
+    let isEnabled: Bool
 
     var body: some View {
         HStack {
             Image(systemName: "magnifyingglass")
                 .foregroundStyle(.secondary)
-            TextField("Search transmissions", text: $searchText)
-                .textFieldStyle(.roundedBorder)
+            TextField(
+                isEnabled ? "Search transmissions" : "Building search index…",
+                text: $searchText,
+            )
+            .textFieldStyle(.roundedBorder)
+            .disabled(!isEnabled)
         }
     }
 }
