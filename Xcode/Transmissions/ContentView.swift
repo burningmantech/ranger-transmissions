@@ -75,17 +75,11 @@ struct ContentView: View {
                     .frame(height: 150)
             } else {
                 Spacer()
-                Text("Open a database to begin.")
-                    .foregroundStyle(.secondary)
+                Button("Open Database…") { isImporting = true }
                 Spacer()
             }
         }
         .padding()
-        .toolbar {
-            ToolbarItem {
-                Button("Open Database…") { isImporting = true }
-            }
-        }
         .fileImporter(
             isPresented: $isImporting,
             allowedContentTypes: [
@@ -142,13 +136,13 @@ struct TransmissionTableView: View {
                 TableColumn("Station", value: \.station)
                     .width(125)
                 TableColumn("System", value: \.system)
-                    .width(45)
+                    .width(60)
                 TableColumn("Time", value: \.startTime) { transmission in
                     Text(dateFormatter.string(from: transmission.startTime))
                 }
-                .width(95)
+                .width(110)
                 TableColumn("Channel", value: \.channel)
-                    .width(100)
+                    .width(110)
                 TableColumn("Duration", value: \.duration.orZero) { transmission in
                     Text(transmission.duration?.formatted(durationStyle) ?? "")
                 }
@@ -169,7 +163,7 @@ struct TransmissionSearchBarView: View {
             Image(systemName: "magnifyingglass")
                 .foregroundStyle(.secondary)
             TextField(
-                isEnabled ? "Search transmissions" : "Building search index…",
+                isEnabled ? "Search transmissions" : "No search index…",
                 text: $searchText,
             )
             .textFieldStyle(.roundedBorder)
