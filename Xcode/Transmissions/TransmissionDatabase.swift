@@ -159,7 +159,7 @@ nonisolated final class TransmissionDatabase: @unchecked Sendable {
         try execute("""
             select count(*) from (
                 select rowid from temp.TRANSMISSIONS_FTS
-                where temp.TRANSMISSIONS_FTS match 'a*'
+                where TRANSMISSIONS_FTS match 'a*'
                 order by START_TIME asc
                 limit 1000
             )
