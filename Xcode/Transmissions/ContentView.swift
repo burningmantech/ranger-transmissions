@@ -45,14 +45,13 @@ struct Transmission: Identifiable {
 struct ContentView: View {
     @State private var searchText: String = ""
     @State private var selectedTransmissionID: Transmission.ID?
-    @State private var transmissions: [Transmission] = []
-    @State private var database: TransmissionDatabase?
+    @State private var transmissionList: TransmissionList?
     @State private var loadError: String?
     @State private var isImporting: Bool = false
 
     var selectedTransmission: Transmission? {
         guard let selectedTransmissionID else { return nil }
-        return transmissions.first { $0.id == selectedTransmissionID }
+        return transmissionList?.transmission(forID: selectedTransmissionID)
     }
 
     var body: some View {
@@ -61,13 +60,21 @@ struct ContentView: View {
             if let loadError {
                 Text(loadError)
                     .foregroundStyle(.red)
-            } else {
+            } else if let transmissionList {
                 TransmissionTableView(
-                    transmissions: transmissions,
+                    transmissionList: transmissionList,
                     selectedTransmissionID: $selectedTransmissionID,
                 )
+                Text("\(transmissionList.totalCount) transmissions")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
                 TransmissionDetailsView(transmission: selectedTransmission)
                     .frame(height: 150)
+            } else {
+                Spacer()
+                Text("Open a database to begin.")
+                    .foregroundStyle(.secondary)
+                Spacer()
             }
         }
         .padding()
@@ -90,15 +97,10 @@ struct ContentView: View {
                 loadError = error.localizedDescription
             }
         }
-        .task(id: SearchKey(searchText: searchText, databaseID: database.map(ObjectIdentifier.init))) {
+        .task(id: searchText) {
             try? await Task.sleep(nanoseconds: 200_000_000)
-            guard !Task.isCancelled, let database else { return }
-            do {
-                transmissions = try database.transmissions(matching: searchText)
-                loadError = nil
-            } catch {
-                loadError = "Search failed: \(error)"
-            }
+            guard !Task.isCancelled else { return }
+            transmissionList?.searchText = searchText
         }
     }
 
@@ -106,33 +108,20 @@ struct ContentView: View {
         let needsRelease = url.startAccessingSecurityScopedResource()
         defer { if needsRelease { url.stopAccessingSecurityScopedResource() } }
         do {
-            database = try TransmissionDatabase(url: url)
+            let database = try TransmissionDatabase(url: url)
+            transmissionList = TransmissionList(database: database)
+            selectedTransmissionID = nil
             loadError = nil
         } catch {
             loadError = "Failed to open database: \(error)"
-            database = nil
-            transmissions = []
+            transmissionList = nil
         }
     }
 }
 
-private struct SearchKey: Hashable {
-    let searchText: String
-    let databaseID: ObjectIdentifier?
-}
-
 struct TransmissionTableView: View {
-    let transmissions: [Transmission]
-
+    @Bindable var transmissionList: TransmissionList
     @Binding var selectedTransmissionID: Transmission.ID?
-
-    @State private var sortOrder: [KeyPathComparator<Transmission>] = [
-        KeyPathComparator(\.startTime)
-    ]
-
-    var sortedTransmissions: [Transmission] {
-        transmissions.sorted(using: sortOrder)
-    }
 
     private let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -144,7 +133,7 @@ struct TransmissionTableView: View {
 
     var body: some View {
         VStack {
-            Table(sortedTransmissions, selection: $selectedTransmissionID, sortOrder: $sortOrder) {
+            Table(transmissionList.rows, selection: $selectedTransmissionID, sortOrder: $transmissionList.sortOrder) {
                 TableColumn("Event ID", value: \.eventID)
                     .width(50)
                 TableColumn("Station", value: \.station)
@@ -163,6 +152,7 @@ struct TransmissionTableView: View {
                 .width(60)
                 TableColumn("Transcript", value: \.transcription.orEmpty)
             }
+            .id(transmissionList.dataVersion)
         }
     }
 }

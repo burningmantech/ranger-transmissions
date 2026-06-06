@@ -32,37 +32,57 @@ final class TransmissionDatabase {
         sqlite3_close(db)
     }
 
-    func transmissions(matching searchText: String) throws -> [Transmission] {
+    func count(matching searchText: String) throws -> Int {
         let trimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         let useMatch = !trimmed.isEmpty
-
-        let sql: String
-        if useMatch {
-            sql = """
-                select EVENT_ID, STATION, SYSTEM, CHANNEL, START_TIME, DURATION,
-                       FILE_NAME, SHA256, TRANSCRIPTION, TRANSCRIPTION_VERSION
-                from TRANSMISSIONS_FTS
-                where TRANSMISSIONS_FTS match ?
-                """
-        } else {
-            sql = """
-                select EVENT_ID, STATION, SYSTEM, CHANNEL, START_TIME, DURATION,
-                       FILE_NAME, SHA256, TRANSCRIPTION, TRANSCRIPTION_VERSION
-                from TRANSMISSIONS_FTS
-                """
-        }
+        let baseSelect = "select count(*) from TRANSMISSIONS_FTS"
+        let whereClause = useMatch ? " where TRANSMISSIONS_FTS match ?" : ""
+        let sql = "\(baseSelect)\(whereClause)"
 
         var statement: OpaquePointer?
         guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK else {
-            let message = String(cString: sqlite3_errmsg(db))
-            throw TransmissionDatabaseError.prepareFailed(message)
+            throw TransmissionDatabaseError.prepareFailed(String(cString: sqlite3_errmsg(db)))
         }
         defer { sqlite3_finalize(statement) }
 
         if useMatch {
-            let query = fts5Query(for: trimmed)
-            sqlite3_bind_text(statement, 1, query, -1, SQLITE_TRANSIENT)
+            sqlite3_bind_text(statement, 1, fts5Query(for: trimmed), -1, SQLITE_TRANSIENT)
         }
+
+        guard sqlite3_step(statement) == SQLITE_ROW else { return 0 }
+        return Int(sqlite3_column_int64(statement, 0))
+    }
+
+    func transmissions(
+        matching searchText: String,
+        orderBy: String,
+        offset: Int,
+        limit: Int,
+    ) throws -> [Transmission] {
+        let trimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let useMatch = !trimmed.isEmpty
+
+        let baseSelect = """
+            select EVENT_ID, STATION, SYSTEM, CHANNEL, START_TIME, DURATION,
+                   FILE_NAME, SHA256, TRANSCRIPTION, TRANSCRIPTION_VERSION
+            from TRANSMISSIONS_FTS
+            """
+        let whereClause = useMatch ? " where TRANSMISSIONS_FTS match ?" : ""
+        let sql = "\(baseSelect)\(whereClause) \(orderBy) LIMIT ? OFFSET ?"
+
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK else {
+            throw TransmissionDatabaseError.prepareFailed(String(cString: sqlite3_errmsg(db)))
+        }
+        defer { sqlite3_finalize(statement) }
+
+        var bindIndex: Int32 = 1
+        if useMatch {
+            sqlite3_bind_text(statement, bindIndex, fts5Query(for: trimmed), -1, SQLITE_TRANSIENT)
+            bindIndex += 1
+        }
+        sqlite3_bind_int64(statement, bindIndex, sqlite3_int64(limit))
+        sqlite3_bind_int64(statement, bindIndex + 1, sqlite3_int64(offset))
 
         var results: [Transmission] = []
         while sqlite3_step(statement) == SQLITE_ROW {
