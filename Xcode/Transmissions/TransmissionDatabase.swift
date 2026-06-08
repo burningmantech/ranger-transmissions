@@ -26,8 +26,6 @@ nonisolated final class TransmissionDatabase: @unchecked Sendable {
             throw TransmissionDatabaseError.openFailed(message)
         }
         self.db = handle
-//        // Keep the temp FTS index in RAM so queries don't pay disk I/O.
-//        try execute("PRAGMA temp_store = MEMORY")
     }
 
     deinit {
