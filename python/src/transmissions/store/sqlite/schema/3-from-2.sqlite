@@ -1,0 +1,34 @@
+-- Add full text search index
+
+create virtual table TRANSMISSION_FTS using fts5(
+    EVENT,
+    STATION,
+    SYSTEM,
+    CHANNEL,
+    TRANSCRIPTION,
+    START_TIME unindexed,
+    DURATION unindexed,
+    FILE_NAME unindexed,
+    SHA256 unindexed,
+    TRANSCRIPTION_VERSION unindexed,
+    tokenize = 'Unicode61 remove_diacritics 2'
+);
+
+-- Populate index
+
+insert into TRANSMISSION_FTS (
+    EVENT, STATION, SYSTEM, CHANNEL, TRANSCRIPTION,
+    START_TIME, DURATION, FILE_NAME, SHA256, TRANSCRIPTION_VERSION
+)
+select
+    EVENT, STATION, SYSTEM, CHANNEL, TRANSCRIPTION,
+    START_TIME, DURATION, FILE_NAME, SHA256, TRANSCRIPTION_VERSION
+from TRANSMISSION;
+
+-- Optimize index
+
+insert into TRANSMISSION_FTS(TRANSMISSION_FTS) values('optimize');
+
+-- Update schema version
+
+update SCHEMA_INFO set VERSION = 3;

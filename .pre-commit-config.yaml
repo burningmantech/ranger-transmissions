@@ -4,6 +4,40 @@ ci:
 
 repos:
 
+  # All
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: "v6.0.0"
+    hooks:
+      - id: check-case-conflict
+      - id: check-executables-have-shebangs
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-shebang-scripts-are-executable
+      - id: check-symlinks
+      - id: check-toml
+      - id: check-vcs-permalinks
+      - id: check-xml
+      - id: check-yaml
+      - id: destroyed-symlinks
+      # - id: detect-aws-credentials
+      - id: detect-private-key
+      - id: end-of-file-fixer
+      - id: forbid-submodules
+      - id: mixed-line-ending
+      - id: no-commit-to-branch
+        args: ["--branch", "master"]
+      - id: pretty-format-json
+        exclude: '^Xcode/.*\.xcassets/.*'
+        args:
+          - "--autofix"
+          - "--no-ensure-ascii"
+          - "--no-sort-keys"
+      - id: trailing-whitespace
+        args:
+          - --markdown-linebreak-ext=md
+
+  # Python
+
   - repo: https://github.com/astral-sh/ruff-pre-commit
     # Ruff version.
     rev: v0.15.5
@@ -11,49 +45,47 @@ repos:
       - id: ruff-check
         args: [ --fix ]
       - id: ruff-format
+        files: '^python/.*'
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: "v6.0.0"
     hooks:
       - id: check-ast
+        files: '^python/.*'
       - id: check-builtin-literals
-      - id: check-case-conflict
+        files: '^python/.*'
       - id: check-docstring-first
-      - id: check-executables-have-shebangs
-      - id: check-json
-      - id: check-merge-conflict
-      - id: check-shebang-scripts-are-executable
-      # - id: check-symlinks
-      - id: check-toml
-      - id: check-vcs-permalinks
-      - id: check-xml
-      - id: check-yaml
+        files: '^python/.*'
       - id: debug-statements
-      - id: destroyed-symlinks
-      - id: detect-private-key
-      - id: end-of-file-fixer
+        files: '^python/.*'
       - id: fix-byte-order-marker
+        files: '^python/.*'
       - id: end-of-file-fixer
-      - id: forbid-new-submodules
-      - id: mixed-line-ending
-      - id: name-tests-test
-        args:
-          - --pytest-test-first
-      - id: no-commit-to-branch
-        args: ["--branch", "master"]
-      - id: trailing-whitespace
+        files: '^python/.*'
+#      - id: name-tests-test
+#        files: '^python/.*'
+#        args:
+#          - --pytest-test-first
 
   - repo: https://github.com/pre-commit/pygrep-hooks
     rev: "v1.10.0"
     hooks:
       - id: python-check-blanket-noqa
+        files: '^python/.*'
       - id: python-check-blanket-type-ignore
+        files: '^python/.*'
       - id: python-no-eval
+        files: '^python/.*'
       - id: python-use-type-annotations
+        files: '^python/.*'
       - id: rst-backticks
+        files: '^python/.*'
       - id: rst-directive-colons
+        files: '^python/.*'
       - id: rst-inline-touching-normal
+        files: '^python/.*'
       - id: text-unicode-replacement-char
+        files: '^python/.*'
 
 #  - repo: https://github.com/mgedmin/check-manifest
 #    rev: "0.51"

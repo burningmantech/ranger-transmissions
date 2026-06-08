@@ -2,6 +2,7 @@ from collections import deque
 from collections.abc import Awaitable, Iterable
 from datetime import datetime as DateTime
 from datetime import timedelta as TimeDelta
+from enum import IntEnum
 from hashlib import sha256
 from os import walk
 from pathlib import Path
@@ -146,7 +147,7 @@ class Patterns:
     @classmethod
     def pattern_2024(cls) -> Pattern:
         """
-        Regex for 2024 file names.
+        Regex for 2024-2025 file names.
         """
         # Examples:
         "2024-08-29 04-54-33 BRC 911 ALT All Call- 'Radio' called 'All'.wav"
@@ -175,6 +176,16 @@ class IndexerState:
     scanComplete: bool = False
 
 
+class ModelVersion(IntEnum):
+    """
+    Model version.
+    """
+
+    Unknown = 0
+    WhisperLarge = 20240930
+    WhisperLargeV3 = 30000000
+
+
 @frozen(kw_only=True)
 class Indexer:
     """
@@ -184,7 +195,8 @@ class Indexer:
     log: ClassVar[Logger] = Logger()
 
     _whisper: ClassVar[Whisper] = None
-    _whisperVersion: ClassVar[int] = getWhisperVersion()
+    _whisperVersion: ClassVar[int] = ModelVersion.WhisperLargeV3
+    _whisperModel: ClassVar[str] = "large-v3"
     _whisperUseFP16 = None
 
     @classmethod
@@ -206,9 +218,11 @@ class Indexer:
                     cls._whisperUseFP16 = False
 
             Indexer.log.info(
-                "Loading Whisper model (device={device})...", device=device
+                "Loading Whisper model {model} (device={device})...",
+                model=cls._whisperModel,
+                device=device,
             )
-            cls._whisper = loadWhisper("large").to(device)
+            cls._whisper = loadWhisper(cls._whisperModel).to(device)
 
         return cls._whisper
 
@@ -403,7 +417,7 @@ class Indexer:
         store: TXDataStore,
         transmission: Transmission,
     ) -> None:
-        self.log.info(
+        self.log.debug(
             "Computing duration for {transmission}", transmission=transmission
         )
         with self.log.failuresHandled(
@@ -427,7 +441,7 @@ class Indexer:
         store: TXDataStore,
         transmission: Transmission,
     ) -> None:
-        self.log.info("Computing SHA256 for {transmission}", transmission=transmission)
+        self.log.debug("Computing SHA256 for {transmission}", transmission=transmission)
         sha256 = await deferToThread(self._sha256, transmission.path)
         await store.setTransmissionSHA256(
             eventID=transmission.eventID,
@@ -467,7 +481,7 @@ class Indexer:
         store: TXDataStore,
         transmission: Transmission,
     ) -> None:
-        self.log.info(
+        self.log.debug(
             "Computing transcription for {transmission}",
             transmission=transmission,
         )
@@ -478,7 +492,7 @@ class Indexer:
         store: TXDataStore,
         transmission: Transmission,
     ) -> None:
-        self.log.info(
+        self.log.debug(
             "Recomputing transcription for {transmission}",
             transmission=transmission,
         )

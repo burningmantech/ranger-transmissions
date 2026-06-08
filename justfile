@@ -8,47 +8,73 @@ MODULE_NAME := "transmissions"
 # Run linters and formatters
 [group("qa")]
 lint:
-    uv run --group=lint pre-commit run --all-files
+    uv tool run pre-commit run --all-files
 
-# Run type checker
+# Run unit tests
+[group("qa")]
+test:
+    @just trial
+
+# Run unit tests with coverage
+[group("qa")]
+coverage:
+    @just trial_coverage
+
+# Run all checks
+[group("qa")]
+doit: lint typing coverage
+
+# Generate coverage report
+[group("qa")]
+@coverage_report:
+    @just _trial_coverage report
+    @just _trial_coverage html
+
+#
+# Python
+#
+
+# Helper for running commands via uv
+_uvrun *args:
+    uv --directory=python run {{args}}
+
+# Run Python
+[group("dev")]
+python *args:
+    @just _uvrun python {{args}}
+
+# Run mypy
 [group("qa")]
 mypy TARGET="src":
-    uv run --group=mypy mypy "{{TARGET}}"
+    @just _uvrun --group=mypy mypy "{{TARGET}}"
 
+# Run type checks
+[group("qa")]
 typing:
     @just mypy
 
 # Run tests
 [group("qa")]
-test TARGET=MODULE_NAME:
-    uv run --group=unit trial --random=0 --jobs=2 "{{TARGET}}"
+trial TARGET=MODULE_NAME:
+    @just _uvrun --group=unit trial --random=0 --jobs=2 "{{TARGET}}"
 
-_coverage *args:
-    uv run --group=unit coverage {{args}}
+# Helper for running trial with coverage
+_trial_coverage *args:
+    @just _uvrun --group=unit coverage {{args}}
 
 # Run tests with coverage
 [group("qa")]
-@coverage TARGET=MODULE_NAME:
-    just _coverage run --source="{{MODULE_NAME}}" -m twisted.trial --random=0 --jobs=2 "{{TARGET}}"
-    just _coverage combine
-    just _coverage xml
-    just _coverage report --skip-covered
-
-# Generate coverage report
-[group("qa")]
-@coverage_report:
-    just _coverage report
-    just _coverage html
+@trial_coverage TARGET=MODULE_NAME:
+    @just _trial_coverage run --source="{{MODULE_NAME}}" -m twisted.trial --random=0 --jobs=2 "{{TARGET}}"
+    @just _trial_coverage combine
+    @just _trial_coverage xml
+    @just _trial_coverage report --skip-covered
 
 # Check packaging
 [group("qa")]
 packaging:
-    uv run --group=packaging pip wheel --no-deps --wheel-dir=dist .
-    uv run --group=packaging twine check dist/*
-
-# Run all checks
-[group("qa")]
-doit: lint typing coverage
+    @just _uvrun --group=packaging pip wheel --no-deps --wheel-dir=dist .
+    @just _uvrun --group=packaging twine check dist/*
 
 # Update lockfile
 [group("lifecycle")]
@@ -58,18 +84,19 @@ update:
 # Install dependencies
 [group("lifecycle")]
 install:
-    uv sync
+    uv --directory=python sync
 
 # Run indexer
 [group("run")]
 index *args:
-    uv run rtx index {{args}}
+    @just _uvrun rtx index {{args}}
 
 # Run the web server
 [group("run")]
 serve:
-    uv run rtx web
+    _uvrun rtx web
 
+# Helper for running httpie
 _http *args:
     uvx --from httpie http {{args}}
 
@@ -81,4 +108,4 @@ request path="" *args:
 # Open the local server in the default web browser
 [group("run")]
 browser:
-    uv run -m webbrowser -t http://localhost:8080/
+    @just _uvrun -m webbrowser -t http://localhost:8080/

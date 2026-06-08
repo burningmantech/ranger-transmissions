@@ -64,10 +64,15 @@ class Queries:
     transmissions: Query
     transmission: Query
     createTransmission: Query
+    createTransmission_fts: Query
     setTransmission_duration: Query
+    setTransmission_duration_fts: Query
     setTransmission_sha256: Query
+    setTransmission_sha256_fts: Query
     setTransmission_transcription: Query
+    setTransmission_transcription_fts: Query
     setTransmission_transcriptionVersion: Query
+    setTransmission_transcriptionVersion_fts: Query
 
 
 @frozen(kw_only=True)
@@ -324,6 +329,21 @@ class DatabaseStore(TXDataStore):
                 "transcriptionVersion": transmission.transcriptionVersion,
             },
         )
+        await self.runOperation(
+            self.query.createTransmission_fts,
+            {
+                "eventID": transmission.eventID,
+                "station": transmission.station,
+                "system": transmission.system,
+                "channel": transmission.channel,
+                "startTime": self.asDateTimeValue(transmission.startTime),
+                "duration": duration,
+                "fileName": str(transmission.path),
+                "sha256": transmission.sha256,
+                "transcription": transmission.transcription,
+                "transcriptionVersion": transmission.transcriptionVersion,
+            },
+        )
         await self.commit()
 
         self.log.info(
@@ -345,6 +365,16 @@ class DatabaseStore(TXDataStore):
         """
         await self.runOperation(
             self.query.setTransmission_duration,
+            {
+                "eventID": eventID,
+                "system": system,
+                "channel": channel,
+                "startTime": self.asDateTimeValue(startTime),
+                "value": self.asDurationValue(duration),
+            },
+        )
+        await self.runOperation(
+            self.query.setTransmission_duration_fts,
             {
                 "eventID": eventID,
                 "system": system,
@@ -378,6 +408,16 @@ class DatabaseStore(TXDataStore):
         """
         await self.runOperation(
             self.query.setTransmission_sha256,
+            {
+                "eventID": eventID,
+                "system": system,
+                "channel": channel,
+                "startTime": self.asDateTimeValue(startTime),
+                "value": sha256,
+            },
+        )
+        await self.runOperation(
+            self.query.setTransmission_sha256_fts,
             {
                 "eventID": eventID,
                 "system": system,
@@ -426,7 +466,27 @@ class DatabaseStore(TXDataStore):
             },
         )
         await self.runOperation(
+            self.query.setTransmission_transcription_fts,
+            {
+                "eventID": eventID,
+                "system": system,
+                "channel": channel,
+                "startTime": self.asDateTimeValue(startTime),
+                "value": transcription,
+            },
+        )
+        await self.runOperation(
             self.query.setTransmission_transcriptionVersion,
+            {
+                "eventID": eventID,
+                "system": system,
+                "channel": channel,
+                "startTime": self.asDateTimeValue(startTime),
+                "value": transcriptionVersion,
+            },
+        )
+        await self.runOperation(
+            self.query.setTransmission_transcriptionVersion_fts,
             {
                 "eventID": eventID,
                 "system": system,

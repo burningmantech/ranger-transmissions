@@ -31,6 +31,13 @@ template_setTransmissionAttribute = """
         START_TIME = :startTime
     """
 
+template_setTransmissionAttribute_fts = """
+    update TRANSMISSION_FTS set {column} = :value
+    where
+        EVENT = :eventID and SYSTEM = :system and CHANNEL = :channel and
+        START_TIME = :startTime
+    """
+
 
 queries = Queries(
     schemaVersion=Query(
@@ -90,20 +97,48 @@ queries = Queries(
         )
         """,
     ),
+    createTransmission_fts=Query(
+        "create transmission (FTS)",
+        """
+        insert into TRANSMISSION_FTS (
+            EVENT, STATION, SYSTEM, CHANNEL, START_TIME, DURATION,
+            FILE_NAME, SHA256, TRANSCRIPTION, TRANSCRIPTION_VERSION
+        ) values (
+            :eventID, :station, :system, :channel, :startTime, :duration,
+            :fileName, :sha256, :transcription, :transcriptionVersion
+        )
+        """,
+    ),
     setTransmission_duration=Query(
         "set transmission duration",
         template_setTransmissionAttribute.format(column="DURATION"),
+    ),
+    setTransmission_duration_fts=Query(
+        "set transmission duration (FTS)",
+        template_setTransmissionAttribute_fts.format(column="DURATION"),
     ),
     setTransmission_sha256=Query(
         "set transmission SHA 256",
         template_setTransmissionAttribute.format(column="SHA256"),
     ),
+    setTransmission_sha256_fts=Query(
+        "set transmission SHA 256 (FTS)",
+        template_setTransmissionAttribute_fts.format(column="SHA256"),
+    ),
     setTransmission_transcription=Query(
         "set transmission transcription",
         template_setTransmissionAttribute.format(column="TRANSCRIPTION"),
     ),
+    setTransmission_transcription_fts=Query(
+        "set transmission transcription (FTS)",
+        template_setTransmissionAttribute_fts.format(column="TRANSCRIPTION"),
+    ),
     setTransmission_transcriptionVersion=Query(
         "set transmission transcription",
         template_setTransmissionAttribute.format(column="TRANSCRIPTION_VERSION"),
+    ),
+    setTransmission_transcriptionVersion_fts=Query(
+        "set transmission transcription (FTS)",
+        template_setTransmissionAttribute_fts.format(column="TRANSCRIPTION_VERSION"),
     ),
 )
