@@ -163,7 +163,7 @@ struct TransmissionSearchBarView: View {
             Image(systemName: "magnifyingglass")
                 .foregroundStyle(.secondary)
             TextField(
-                isEnabled ? "Search transmissions" : "No search index…",
+                isEnabled ? "Search transmissions" : "Initializing search index…",
                 text: $searchText,
             )
             .textFieldStyle(.roundedBorder)

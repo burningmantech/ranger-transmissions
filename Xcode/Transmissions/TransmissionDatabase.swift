@@ -26,8 +26,8 @@ nonisolated final class TransmissionDatabase: @unchecked Sendable {
             throw TransmissionDatabaseError.openFailed(message)
         }
         self.db = handle
-        // Keep the temp FTS index in RAM so queries don't pay disk I/O.
-        try execute("PRAGMA temp_store = MEMORY")
+//        // Keep the temp FTS index in RAM so queries don't pay disk I/O.
+//        try execute("PRAGMA temp_store = MEMORY")
     }
 
     deinit {
@@ -45,35 +45,11 @@ nonisolated final class TransmissionDatabase: @unchecked Sendable {
         return Int(sqlite3_column_int64(statement, 0))
     }
 
-    func transmissions(
-        orderBy: String,
-        offset: Int,
-        limit: Int,
-    ) throws -> [Transmission] {
-        let sql = """
-            select EVENT as EVENT_ID, STATION, SYSTEM, CHANNEL, START_TIME, DURATION,
-                   FILE_NAME, SHA256, TRANSCRIPTION, TRANSCRIPTION_VERSION
-            from TRANSMISSION \(orderBy) LIMIT ? OFFSET ?
-            """
-        var statement: OpaquePointer?
-        guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK else {
-            throw TransmissionDatabaseError.prepareFailed(String(cString: sqlite3_errmsg(db)))
-        }
-        defer { sqlite3_finalize(statement) }
-        sqlite3_bind_int64(statement, 1, sqlite3_int64(limit))
-        sqlite3_bind_int64(statement, 2, sqlite3_int64(offset))
-        var results: [Transmission] = []
-        while sqlite3_step(statement) == SQLITE_ROW {
-            results.append(makeTransmission(from: statement))
-        }
-        return results
-    }
-
     func count(matching searchText: String) throws -> Int {
         let trimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         let useMatch = !trimmed.isEmpty
-        let baseSelect = "select count(*) from TRANSMISSIONS_FTS"
-        let whereClause = useMatch ? " where TRANSMISSIONS_FTS match ?" : ""
+        let baseSelect = "select count(*) from TRANSMISSION_FTS"
+        let whereClause = useMatch ? " where TRANSMISSION_FTS match ?" : ""
         let sql = "\(baseSelect)\(whereClause)"
 
         var statement: OpaquePointer?
@@ -91,20 +67,44 @@ nonisolated final class TransmissionDatabase: @unchecked Sendable {
     }
 
     func transmissions(
-        matching searchText: String,
         orderBy: String,
         offset: Int,
         limit: Int,
+    ) throws -> [Transmission] {
+        let sql = """
+            select EVENT, STATION, SYSTEM, CHANNEL, START_TIME, DURATION,
+                   FILE_NAME, SHA256, TRANSCRIPTION, TRANSCRIPTION_VERSION
+            from TRANSMISSION \(orderBy) LIMIT ? OFFSET ?
+            """
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK else {
+            throw TransmissionDatabaseError.prepareFailed(String(cString: sqlite3_errmsg(db)))
+        }
+        defer { sqlite3_finalize(statement) }
+        sqlite3_bind_int64(statement, 1, sqlite3_int64(limit))
+        sqlite3_bind_int64(statement, 2, sqlite3_int64(offset))
+        var results: [Transmission] = []
+        while sqlite3_step(statement) == SQLITE_ROW {
+            results.append(makeTransmission(from: statement))
+        }
+        return results
+    }
+
+    func transmissions(
+        orderBy: String,
+        offset: Int,
+        limit: Int,
+        matching searchText: String,
     ) throws -> [Transmission] {
         let trimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         let useMatch = !trimmed.isEmpty
 
         let baseSelect = """
-            select EVENT_ID, STATION, SYSTEM, CHANNEL, START_TIME, DURATION,
+            select EVENT, STATION, SYSTEM, CHANNEL, START_TIME, DURATION,
                    FILE_NAME, SHA256, TRANSCRIPTION, TRANSCRIPTION_VERSION
-            from TRANSMISSIONS_FTS
+            from TRANSMISSION_FTS
             """
-        let whereClause = useMatch ? " where TRANSMISSIONS_FTS match ?" : ""
+        let whereClause = useMatch ? " where TRANSMISSION_FTS match ?" : ""
         let sql = "\(baseSelect)\(whereClause) \(orderBy) LIMIT ? OFFSET ?"
 
         var statement: OpaquePointer?
@@ -128,42 +128,19 @@ nonisolated final class TransmissionDatabase: @unchecked Sendable {
         return results
     }
 
-    func buildFullTextIndex() throws {
-        try execute("""
-            create virtual table temp.TRANSMISSIONS_FTS using fts5(
-                EVENT_ID, STATION, SYSTEM, CHANNEL, TRANSCRIPTION,
-                START_TIME unindexed,
-                DURATION unindexed,
-                FILE_NAME unindexed,
-                SHA256 unindexed,
-                TRANSCRIPTION_VERSION unindexed
-            )
-            """)
-        try execute("""
-            insert into temp.TRANSMISSIONS_FTS (
-                EVENT_ID, STATION, SYSTEM, CHANNEL, TRANSCRIPTION,
-                START_TIME, DURATION, FILE_NAME, SHA256, TRANSCRIPTION_VERSION
-            )
-            select EVENT, STATION, SYSTEM, CHANNEL, TRANSCRIPTION,
-                   START_TIME, DURATION, FILE_NAME, SHA256, TRANSCRIPTION_VERSION
-            from TRANSMISSION
-            """)
-        // Merge the index segments produced by the bulk insert so the very
-        // first query doesn't pay the segment-traversal cost.
-        try execute("""
-            insert into temp.TRANSMISSIONS_FTS(TRANSMISSIONS_FTS) values('optimize')
-            """)
+    func setupFullTextIndex() throws {
         // Run a query that mirrors what a real search does (match + sort by
         // START_TIME) so SQLite materializes everything before we declare
         // the index "ready".
-        try execute("""
-            select count(*) from (
-                select rowid from temp.TRANSMISSIONS_FTS
-                where TRANSMISSIONS_FTS match 'a*'
-                order by START_TIME asc
-                limit 1000
-            )
-            """)
+        let _ = try self.transmissions(orderBy: "order by START_TIME asc", offset: 0, limit: 1000, matching: "xyzzy")
+//        try execute("""
+//            select count(*) from (
+//                select rowid from TRANSMISSION_FTS
+//                where TRANSMISSION_FTS match 'a*'
+//                order by START_TIME asc
+//                limit 1000
+//            )
+//            """)
     }
 
     private func execute(_ sql: String) throws {

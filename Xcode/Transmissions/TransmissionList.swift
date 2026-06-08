@@ -39,15 +39,16 @@ final class TransmissionList {
         guard let database else { return }
         Task.detached(priority: .userInitiated) { [weak self] in
             do {
-                try database.buildFullTextIndex()
+                try database.setupFullTextIndex()
             } catch {
+                print("Unable to load database: \(error)")
                 return
             }
-            await self?.fullTextIndexDidBuild()
+            await self?.fullTextIndexDidSetup()
         }
     }
 
-    private func fullTextIndexDidBuild() {
+    private func fullTextIndexDidSetup() {
         isFullTextIndexReady = true
         if !searchText.isEmpty { scheduleReload() }
     }
@@ -184,10 +185,10 @@ final class TransmissionList {
                     )
                 } else if isIndexReady {
                     return try database.transmissions(
-                        matching: searchText,
                         orderBy: orderClause,
                         offset: pageIndex * pageSize,
                         limit: pageSize,
+                        matching: searchText,
                     )
                 } else {
                     return []
@@ -217,7 +218,7 @@ final class TransmissionList {
     }
 
     private func sqlColumn(for keyPath: PartialKeyPath<Transmission>) -> String {
-        if keyPath == \Transmission.eventID { return "EVENT_ID" }
+        if keyPath == \Transmission.eventID { return "EVENT" }
         if keyPath == \Transmission.station { return "STATION" }
         if keyPath == \Transmission.system { return "SYSTEM" }
         if keyPath == \Transmission.channel { return "CHANNEL" }
