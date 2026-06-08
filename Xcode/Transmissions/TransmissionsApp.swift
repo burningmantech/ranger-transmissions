@@ -11,7 +11,7 @@ import SwiftUI
 struct TransmissionsApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            TransmissionContentView()
         }
     }
 }

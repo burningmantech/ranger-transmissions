@@ -10,7 +10,8 @@ create virtual table TRANSMISSION_FTS using fts5(
     DURATION unindexed,
     FILE_NAME unindexed,
     SHA256 unindexed,
-    TRANSCRIPTION_VERSION unindexed
+    TRANSCRIPTION_VERSION unindexed,
+    tokenize = 'Unicode61 remove_diacritics 2'
 );
 
 -- Populate index

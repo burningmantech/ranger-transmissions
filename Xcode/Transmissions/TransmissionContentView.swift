@@ -1,5 +1,5 @@
 //
-//  ContentView.swift
+//  TransmissionContentView.swift
 //  Transmissions
 //
 //  Created by Wilfredo Sánchez Vega on 5/28/26.
@@ -42,7 +42,7 @@ struct Transmission: Identifiable {
     }
 }
 
-struct ContentView: View {
+struct TransmissionContentView: View {
     @State private var searchText: String = ""
     @State private var selectedTransmissionID: Transmission.ID?
     @State private var transmissionList: TransmissionList?
@@ -193,5 +193,5 @@ struct TransmissionDetailsView: View {
 }
 
 #Preview("Transmissions") {
-    ContentView()
+    TransmissionContentView()
 }
